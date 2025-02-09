@@ -1,10 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
+class Organization(models.Model):
+    organization_id = models.AutoField(primary_key=True)
+    organization_name = models.CharField(max_length=255)
+    address = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.organization_name
+
 class CustomUserManager(BaseUserManager):
-    def create_user(self, username, email, phone_number, organization_name, password=None):
+    def create_user(self, username, email, phone_number, organization, password=None):
         """
-        Create and return a regular user with email, phone_number, and organization_name.
+        Create and return a regular user with email, phone_number, and organization.
         """
         if not username:
             raise ValueError("The Username field must be set")
@@ -12,28 +22,28 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("The Email field must be set")
         if not phone_number:
             raise ValueError("The Phone Number field must be set")
-        if not organization_name:
-            raise ValueError("The Organization Name field must be set")
+        if not organization:
+            raise ValueError("The Organization field must be set")
 
         user = self.model(
             username=username,
             email=self.normalize_email(email),
             phone_number=phone_number,
-            organization_name=organization_name
+            organization=organization
         )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email, phone_number, organization_name, password=None):
+    def create_superuser(self, username, email, phone_number, organization, password=None):
         """
-        Create and return a superuser with email, phone_number, and organization_name.
+        Create and return a superuser with email, phone_number, and organization.
         """
         user = self.create_user(
             username=username,
             email=email,
             phone_number=phone_number,
-            organization_name=organization_name,
+            organization=organization,
             password=password
         )
         user.is_admin = True
@@ -44,7 +54,7 @@ class User(AbstractBaseUser):
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(unique=True)  # Ensure email is unique
     phone_number = models.CharField(max_length=15, unique=True)  # Ensure phone number is unique
-    organization_name = models.CharField(max_length=255)
+    organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True)
     
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -52,7 +62,7 @@ class User(AbstractBaseUser):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'  # The field used for authentication
-    REQUIRED_FIELDS = ['email', 'phone_number', 'organization_name']  # These are required when creating a user
+    REQUIRED_FIELDS = ['email', 'phone_number', 'organization']  # These are required when creating a user
 
     def __str__(self):
         return self.username
@@ -62,5 +72,3 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return self.is_admin
-
-

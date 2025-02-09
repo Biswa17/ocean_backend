@@ -7,18 +7,28 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from .serializers import UserSerializer, RegisterSerializer
-from .models import User
+from .models import User, Organization
 
 # Register view (using CreateAPIView)
-class RegisterView(CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+class RegisterView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            validated_data = serializer.validated_data
+
+            # Hardcoded organization lookup for "Bata"
+            organization = Organization.objects.filter(organization_name="Bata").first()
+            # Create user with the "Bata" organization (if found), else None
+            user = User.objects.create_user(
+                username=validated_data["username"],
+                email=validated_data["email"],
+                phone_number=validated_data["phone_number"],
+                organization=organization,  # Assign "Bata" organization if found
+                password=validated_data["password"]
+            )
+
             return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Login view (using APIView)
