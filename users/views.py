@@ -21,28 +21,32 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             validated_data = serializer.validated_data
-
-            print(validated_data)
             
-            
-        if not organization:
-            # Hardcode organization lookup for "Bata"
-            organization = Organization.objects.filter(organization_name="Bata").first()
+            # Check if organization is provided, if not, assign "Bata"
+            organization = validated_data.get("organization", None)
+            if not organization:
+                organization = Organization.objects.filter(organization_name="Bata").first()
 
-            # Create user with the "Bata" organization (if found), else None
+            # Create the user with the organization (either provided or "Bata")
             user = User.objects.create_user(
                 username=validated_data["username"],
                 email=validated_data["email"],
                 phone_number=validated_data["phone_number"],
-                organization=organization,  # Assign "Bata" organization if found
+                organization=organization,  # Assign "Bata" if organization is not provided
                 password=validated_data["password"]
             )
-
-            # Modify response variables
-            response = {"user_id": user.id, "username": user.username}
+            
+            # Prepare the response with user details
+            response = {
+                "user_id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "phone_number": user.phone_number
+            }
+            
+            # Define the status and message for the response
             status = 201
             message = "User created successfully"
-
         else:
             # Modify response variables in case of error
             response = serializer.errors
@@ -73,18 +77,18 @@ class LoginView(APIView):
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
                 }
-                status = drf_status.HTTP_200_OK
+                status = 200
                 message = "Login successful"
             else:
                 # Modify response variables on invalid password
                 response = {"error": "Invalid credentials"}
-                status = drf_status.HTTP_401_UNAUTHORIZED
+                status = 401
                 message = "Invalid credentials"
 
         except User.DoesNotExist:
             # Modify response variables when user is not found
             response = {"error": "User not found"}
-            status = drf_status.HTTP_404_NOT_FOUND
+            status = 400
             message = "User not found"
 
         # Return the standardized response using custom_response
