@@ -23,7 +23,7 @@ class PortList(APIView):
     def post(self, request):
         # Initialize response, status, and message
         response = []
-        status_code = status.HTTP_201_CREATED
+        status_code = 201
         message = "Port created successfully"
         
         serializer = PortSerializer(data=request.data)
@@ -32,7 +32,7 @@ class PortList(APIView):
             response = serializer.data
         else:
             response = serializer.errors
-            status_code = status.HTTP_400_BAD_REQUEST
+            status_code = 400
             message = "Invalid data"
         
         return custom_response(data=response, status=status_code, message=message)
@@ -44,14 +44,14 @@ class PortDetail(APIView):
     def get(self, request, id):
         # Initialize response, status, and message
         response = []
-        status_code = status.HTTP_200_OK
+        status_code = 200
         message = "Port details retrieved successfully"
 
         try:
             port = Port.objects.get(pk=id)
         except Port.DoesNotExist:
             response = {'detail': 'Not found.'}
-            status_code = status.HTTP_404_NOT_FOUND
+            status_code = 404
             message = "Port not found"
             return custom_response(data=response, status=status_code, message=message)
 
