@@ -1,5 +1,16 @@
 from rest_framework.response import Response
 from rest_framework import status as drf_status
+from rest_framework.views import exception_handler
+from rest_framework.exceptions import (
+    APIException, AuthenticationFailed, NotAuthenticated, 
+    PermissionDenied, ValidationError
+)
+from django.db import DatabaseError
+from django.core.exceptions import ObjectDoesNotExist
+import logging
+
+# Set up logging for debugging purposes
+logger = logging.getLogger(__name__)
 
 def custom_response(data=None, status=200, message=""):
     """
@@ -42,3 +53,41 @@ def get_default_message(status):
         drf_status.HTTP_500_INTERNAL_SERVER_ERROR: "Internal server error. Try again later.",
     }
     return messages.get(status, "An unexpected error occurred.")
+
+
+def custom_exception_handler(exc, context):
+    """Handles all exceptions globally and returns a standardized custom response."""
+    
+    # First, let DRF handle its built-in exceptions
+    response = exception_handler(exc, context)
+
+    # Extract useful information for debugging
+    error_message = str(exc)
+    view_name = context['view'].__class__.__name__ if 'view' in context else 'UnknownView'
+    request_path = context['request'].path if 'request' in context else 'UnknownPath'
+    
+    logger.error(f"Exception in {view_name} at {request_path}: {error_message}")
+
+    if response is not None:
+        # Handle specific DRF exceptions
+        if isinstance(exc, (AuthenticationFailed, NotAuthenticated)):
+            return custom_response(data={}, status=401, message="Invalid or missing or Expired authentication token")
+
+        if isinstance(exc, PermissionDenied):
+            return custom_response(data={}, status=403, message="You do not have permission to perform this action")
+
+        if isinstance(exc, ValidationError):
+            return custom_response(data=exc.detail, status=400, message="Validation failed")
+
+    else:
+        # Handle non-DRF exceptions (database errors, unexpected errors)
+        if isinstance(exc, DatabaseError):
+            return custom_response(data={}, status=500, message="A database error occurred")
+
+        if isinstance(exc, ObjectDoesNotExist):
+            return custom_response(data={}, status=404, message="The requested resource was not found")
+
+        # Handle any other unhandled exceptions
+        return custom_response(data={}, status=500, message="An unexpected error occurred. Please try again later")
+
+    return response  # Return default DRF response if no custom handling is needed

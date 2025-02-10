@@ -1,34 +1,60 @@
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Port
 from .serializers import PortSerializer
+from ocean_management_system.utils.response import custom_response
 
 class PortList(APIView):
     """
     List all ports or create a new port.
     """
     def get(self, request):
+        # Initialize response, status, and message
+        response = []
+        status_code = status.HTTP_200_OK
+        message = "Ports retrieved successfully"
+        
         ports = Port.objects.all()
         serializer = PortSerializer(ports, many=True)
-        return Response(serializer.data)
+        
+        response = serializer.data
+        return custom_response(data=response, status=status_code, message=message)
 
     def post(self, request):
+        # Initialize response, status, and message
+        response = []
+        status_code = status.HTTP_201_CREATED
+        message = "Port created successfully"
+        
         serializer = PortSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            response = serializer.data
+        else:
+            response = serializer.errors
+            status_code = status.HTTP_400_BAD_REQUEST
+            message = "Invalid data"
+        
+        return custom_response(data=response, status=status_code, message=message)
 
 class PortDetail(APIView):
     """
     Retrieve, update or delete a port by ID.
     """
     def get(self, request, id):
+        # Initialize response, status, and message
+        response = []
+        status_code = status.HTTP_200_OK
+        message = "Port details retrieved successfully"
+
         try:
             port = Port.objects.get(pk=id)
         except Port.DoesNotExist:
-            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+            response = {'detail': 'Not found.'}
+            status_code = status.HTTP_404_NOT_FOUND
+            message = "Port not found"
+            return custom_response(data=response, status=status_code, message=message)
 
         serializer = PortSerializer(port)
-        return Response(serializer.data)
+        response = serializer.data
+        return custom_response(data=response, status=status_code, message=message)

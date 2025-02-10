@@ -89,7 +89,7 @@ DATABASES = {
         'USER': 'oms_user',
         'PASSWORD': 'root1234',
         'HOST': 'localhost',
-        'PORT': '5434',
+        'PORT': '5432',
     }
 }
 
@@ -140,6 +140,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'ocean_management_system.utils.response.custom_exception_handler',
+
 }
 
 # Add Simple JWT settings here
