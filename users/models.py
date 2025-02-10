@@ -2,6 +2,10 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 class Organization(models.Model):
+    class Meta:
+        db_table = 'organization'
+
+
     organization_id = models.AutoField(primary_key=True)
     organization_name = models.CharField(max_length=255)
     address = models.TextField(blank=True, null=True)
@@ -61,6 +65,9 @@ class User(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'  # The field used for authentication
@@ -74,3 +81,6 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return self.is_admin
+
+    class Meta:
+        db_table = 'users'

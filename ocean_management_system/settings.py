@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'users',
+    'ports',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -88,7 +89,7 @@ DATABASES = {
         'USER': 'oms_user',
         'PASSWORD': 'root1234',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
     }
 }
 
