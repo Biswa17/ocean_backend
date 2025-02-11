@@ -43,11 +43,20 @@ class CustomUserManager(BaseUserManager):
         """
         Create and return a superuser with email, phone_number, and organization.
         """
+        
+        if organization:  # If organization is provided, fetch the instance
+            try:
+                organization_instance = Organization.objects.get(organization_id=organization)
+            except ObjectDoesNotExist:
+                raise ValueError("Invalid organization ID. Organization does not exist.")
+        else:
+            organization_instance = None  # Allow superusers to have no organization
+
         user = self.create_user(
             username=username,
             email=email,
             phone_number=phone_number,
-            organization=organization,
+            organization=organization_instance,  # Assigning the actual organization instance
             password=password
         )
         user.is_admin = True
