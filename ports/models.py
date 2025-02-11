@@ -2,11 +2,11 @@ from django.db import models
 
 class Port(models.Model):
     port_name = models.CharField(max_length=255, unique=True)
+    code = models.CharField(max_length=50, unique=True)
+    country = models.CharField(max_length=100)
     location = models.CharField(max_length=255, null=True, blank=True)
-    country = models.CharField(max_length=100, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     state = models.CharField(max_length=100, null=True, blank=True)
-    code = models.CharField(max_length=50, unique=True)
     geo_code = models.CharField(max_length=100, null=True, blank=True)
     type = models.CharField(
         max_length=50,
