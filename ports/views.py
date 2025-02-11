@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from .models import Port
 from .serializers import PortSerializer
 from ocean_management_system.utils.response import custom_response
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q
 
 class PortList(APIView):
     """
@@ -13,11 +15,41 @@ class PortList(APIView):
         response = []
         status_code = status.HTTP_200_OK
         message = "Ports retrieved successfully"
+
+        search_term = request.GET.get('search', '')
         
-        ports = Port.objects.all()
-        serializer = PortSerializer(ports, many=True)
+        # Pagination settings (page and per_page from query params)
+        page = request.GET.get('page', 1)  # Default page is 1
+        per_page = request.GET.get('per_page', 10)  # Default per_page is 10
+
+        # Implementing pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = int(per_page)
+
+        # Get all ports (without pagination)
+        ports = Port.objects.all().order_by('port_name')
+        if search_term and len(search_term) >= 3:
+            ports = ports.filter(
+                Q(port_name__icontains=search_term) |
+                Q(country__icontains=search_term)
+            )
+        # Paginate the queryset
+        paginated_ports = paginator.paginate_queryset(ports, request)
+
+        # Serialize the paginated data
+        serializer = PortSerializer(paginated_ports, many=True)
+
         
-        response = serializer.data
+        # Prepare response with paginated data
+        response = {
+            'total_items': paginator.page.paginator.count,  # Total items available
+            'total_pages': paginator.page.paginator.num_pages,  # Total pages
+            'current_page': page,  # Current page
+            'per_page': per_page,  # Items per page
+            'data': serializer.data  # The actual paginated data
+        }
+
+        # Return paginated response
         return custom_response(data=response, status=status_code, message=message)
 
     def post(self, request):

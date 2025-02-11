@@ -39,3 +39,39 @@ class Yard(models.Model):
 
     def __str__(self):
         return self.yard_name
+
+
+
+class Lane(models.Model):
+    # Primary Key
+    lane_id = models.AutoField(primary_key=True)
+    
+    # Foreign Keys referencing Ports for origin and destination
+    from_port = models.ForeignKey(Port, related_name='from_ports', on_delete=models.CASCADE)
+    to_port = models.ForeignKey(Port, related_name='to_ports', on_delete=models.CASCADE)
+    
+    # Additional Fields
+    distance = models.PositiveIntegerField()  # Distance between ports (in kilometers, miles, etc.)
+    estimated_travel_time = models.PositiveIntegerField(help_text="Estimated travel time in days or hours")
+    lane_status = models.CharField(
+        max_length=50, 
+        choices=[
+            ('active', 'Active'),
+            ('maintenance', 'Maintenance'),
+            ('closed', 'Closed')
+        ],
+        default='active'
+    )
+    
+    # Timestamps for record creation and updates
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # String representation of the Lane model
+    def __str__(self):
+        return f"Lane from {self.from_port} to {self.to_port}"
+    
+    class Meta:
+        # Optional: You could add additional constraints or indexes if needed.
+        db_table = "lanes"
+
