@@ -13,7 +13,7 @@ class PortList(APIView):
     def get(self, request):
         # Initialize response, status, and message
         response = []
-        status_code = status.HTTP_200_OK
+        status_code = 200
         message = "Ports retrieved successfully"
 
         search_term = request.GET.get('search', '')
