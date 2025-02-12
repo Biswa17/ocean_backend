@@ -1,5 +1,7 @@
 from django.core.management.base import BaseCommand
 from ports.models import Port, Lane
+from routes.models import Route
+from shipping.models import Ship, ShippingLiner, ShippingRoutes
 from django.utils import timezone
 import random
 
@@ -7,7 +9,15 @@ class Command(BaseCommand):
     help = 'Fill all tables with dummy data'
 
     def handle(self, *args, **kwargs):
-        # Dummy Data for Ports
+        self.populate_ports()
+        self.populate_lanes()
+        self.populate_routes()
+        self.populate_shipping_liners()
+        self.populate_ships()
+        self.populate_shipping_routes()
+        self.stdout.write(self.style.SUCCESS('All tables populated with dummy data!'))
+
+    def populate_ports(self):
         ports_data = [
             {"port_name": "Mumbai Port", "code": "INBOM", "country": "India", "city": "Mumbai", "state": "Maharashtra", "type": "sea port"},
             {"port_name": "Chennai Port", "code": "INMAA", "country": "India", "city": "Chennai", "state": "Tamil Nadu", "type": "sea port"},
@@ -20,14 +30,11 @@ class Command(BaseCommand):
             {"port_name": "Melbourne Port", "code": "AUMEL", "country": "Australia", "city": "Melbourne", "state": "Victoria", "type": "sea port"},
             {"port_name": "Perth Port", "code": "AUPER", "country": "Australia", "city": "Perth", "state": "Western Australia", "type": "sea port"}
         ]
-
-        # Creating Ports
-        self.stdout.write(self.style.SUCCESS('Filling Ports data...'))
         for port in ports_data:
-            Port.objects.create(**port)
+            Port.objects.get_or_create(**port)
         self.stdout.write(self.style.SUCCESS('Ports data populated successfully!'))
 
-        # Dummy Data for Lanes
+    def populate_lanes(self):
         lanes_data = [
             {"from_port": "INBOM", "to_port": "ZADUR", "distance": 7000, "estimated_travel_time": 14, "lane_status": "active"},
             {"from_port": "INBOM", "to_port": "ZACTP", "distance": 7500, "estimated_travel_time": 15, "lane_status": "active"},
@@ -44,13 +51,10 @@ class Command(BaseCommand):
             {"from_port": "AUSYD", "to_port": "INBOM", "distance": 8000, "estimated_travel_time": 17, "lane_status": "active"},
             {"from_port": "AUMEL", "to_port": "INBOM", "distance": 8500, "estimated_travel_time": 18, "lane_status": "active"}
         ]
-
-        # Create Lanes
-        self.stdout.write(self.style.SUCCESS('Filling Lanes data...'))
         for lane in lanes_data:
             from_port = Port.objects.get(code=lane["from_port"])
             to_port = Port.objects.get(code=lane["to_port"])
-            Lane.objects.create(
+            Lane.objects.get_or_create(
                 from_port=from_port,
                 to_port=to_port,
                 distance=lane["distance"],
@@ -59,8 +63,39 @@ class Command(BaseCommand):
             )
         self.stdout.write(self.style.SUCCESS('Lanes data populated successfully!'))
 
-        # Add more dummy data for other tables (Yards, ShippingLine, etc.)
-        # For example, you can add Yards and other data similarly
-        # Populate other models here if necessary
+    def populate_routes(self):
+        routes_data = [
+            {"name": "India to South Africa", "total_distance": 7000, "estimated_duration": 14, "preferred_fuel_type": "Diesel", "cargo_capacity": 10000, "route_status": "active"},
+        ]
+        for route_data in routes_data:
+            Route.objects.get_or_create(**route_data)
+        self.stdout.write(self.style.SUCCESS('Routes data populated successfully!'))
 
-        self.stdout.write(self.style.SUCCESS('All tables populated with dummy data!'))
+    def populate_shipping_liners(self):
+        liners_data = [
+            {"name": "Maersk Line", "contact_details": "contact@maersk.com", "fleet_size": 700, "operational_area": "Global", "type_of_vessels": "Container Ships", "rating": 9},
+            {"name": "MSC", "contact_details": "contact@msc.com", "fleet_size": 600, "operational_area": "Global", "type_of_vessels": "Bulk Carriers", "rating": 8},
+        ]
+        for liner in liners_data:
+            ShippingLiner.objects.get_or_create(**liner)
+        self.stdout.write(self.style.SUCCESS('Shipping Liners data populated successfully!'))
+
+    def populate_ships(self):
+        liners = list(ShippingLiner.objects.all())
+        ships_data = [
+            {"name": "Ever Given", "registration_number": "EG12345", "ship_type": "Container Ship", "capacity": 20000, "flag": "Panama", "shipping_liner": random.choice(liners)},
+            {"name": "MSC Oscar", "registration_number": "MSC98765", "ship_type": "Container Ship", "capacity": 19000, "flag": "Liberia", "shipping_liner": random.choice(liners)},
+        ]
+        for ship_data in ships_data:
+            Ship.objects.get_or_create(**ship_data)
+        self.stdout.write(self.style.SUCCESS('Ships data populated successfully!'))
+
+    def populate_shipping_routes(self):
+        routes = list(Route.objects.all())
+        ships = list(Ship.objects.all())
+        routes_data = [
+            {"route": random.choice(routes), "ship": random.choice(ships), "pricing_model": "per_teu", "departure_schedule": ["2025-03-01T10:00:00Z"], "arrival_schedule": ["2025-03-15T18:00:00Z"], "liner_vessel_types": "Container Ships"},
+        ]
+        for route_data in routes_data:
+            ShippingRoutes.objects.get_or_create(**route_data)
+        self.stdout.write(self.style.SUCCESS('Shipping Routes data populated successfully!'))

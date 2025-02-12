@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'users',
     'ports',
     'routes',
-    'shipping'
+    'shipping',
+    'data_management'
 ]
 
 AUTH_USER_MODEL = 'users.User'
