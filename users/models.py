@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 class Organization(models.Model):
     class Meta:
-        db_table = 'organization'
+        db_table = 'organizations'
 
     organization_name = models.CharField(max_length=255)
     address = models.TextField(blank=True, null=True)

@@ -5,11 +5,13 @@ from shipping.models import Ship, ShippingLiner, ShippingRoutes
 from users.models import Organization, User
 from django.utils import timezone
 import random
+from django.db import connection
 
 class Command(BaseCommand):
     help = 'Fill all tables with dummy data'
 
     def handle(self, *args, **kwargs):
+        self.truncate_tables()
         self.populate_organizations()
         self.populate_users()
         self.populate_ports()
@@ -19,6 +21,20 @@ class Command(BaseCommand):
         self.populate_ships()
         self.populate_shipping_routes()
         self.stdout.write(self.style.SUCCESS('All tables populated with dummy data!'))
+    
+    def truncate_tables(self):
+        """Truncate all tables before inserting new data"""
+        with connection.cursor() as cursor:
+            cursor.execute("TRUNCATE TABLE ports RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE lanes RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE routes RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE ships RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE shippingliners RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE shipping_routes_rel RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE organizations RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE users RESTART IDENTITY CASCADE;")
+
+        self.stdout.write(self.style.WARNING('All tables truncated successfully!'))
 
     def populate_ports(self):
         ports_data = [
