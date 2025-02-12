@@ -56,5 +56,5 @@ class ShippingRoutes(models.Model):
         db_table = "shipping_routes_rel"
 
     def __str__(self):
-        return f"{self.liner.name} on {self.route.name} with {self.ship.name}"
+        return f" {self.route.name} with {self.ship.name}"
 

@@ -45,9 +45,9 @@ class CustomUserManager(BaseUserManager):
         user = self.model.objects.create(
             username=username,
             email=email,
-            phone_number=phone_number,
-            password=password
+            phone_number=phone_number
         )
+        user.set_password(password)
         user.is_admin = True
         user.is_staff = True
         user.save(using=self._db)
