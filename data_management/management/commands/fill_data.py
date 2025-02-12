@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from ports.models import Port, Lane
 from routes.models import Route
 from shipping.models import Ship, ShippingLiner, ShippingRoutes
+from users.models import Organization, User
 from django.utils import timezone
 import random
 
@@ -9,6 +10,8 @@ class Command(BaseCommand):
     help = 'Fill all tables with dummy data'
 
     def handle(self, *args, **kwargs):
+        self.populate_organizations()
+        self.populate_users()
         self.populate_ports()
         self.populate_lanes()
         self.populate_routes()
@@ -99,3 +102,44 @@ class Command(BaseCommand):
         for route_data in routes_data:
             ShippingRoutes.objects.get_or_create(**route_data)
         self.stdout.write(self.style.SUCCESS('Shipping Routes data populated successfully!'))
+
+    def populate_organizations(self):
+        # Create the organization "Bata"
+        bata_organization, created = Organization.objects.get_or_create(organization_name="Bata")
+        if created:
+            self.stdout.write(self.style.SUCCESS('Organization "Bata" created successfully!'))
+        else:
+            self.stdout.write(self.style.SUCCESS('Organization "Bata" already exists!'))
+
+    def populate_users(self):
+        # Get the "Bata" organization
+        try:
+            bata_organization = Organization.objects.get(organization_name="Bata")
+        except Organization.DoesNotExist:
+            self.stdout.write(self.style.ERROR('Organization "Bata" does not exist!'))
+            return
+
+        # Create the root user (superuser)
+        root_user = User.objects.create_superuser(
+            username="tech@ximble",
+            email="tech@ximble",
+            phone_number="1234567890",
+            password="ximble"
+        )
+        self.stdout.write(self.style.SUCCESS('Root user "tech@ximble" created successfully!'))
+
+        # Create a few more dummy users with the "Bata" organization
+        dummy_users_data = [
+            {"username": "john_doe", "email": "john@ximble", "phone_number": "1234567891", "password": "password123"},
+            {"username": "alice_smith", "email": "alice@ximble", "phone_number": "1234567892", "password": "password123"},
+            {"username": "bob_jones", "email": "bob@ximble", "phone_number": "1234567893", "password": "password123"},
+        ]
+        for user_data in dummy_users_data:
+            user = User.objects.create_user(
+                username=user_data["username"],
+                email=user_data["email"],
+                phone_number=user_data["phone_number"],
+                organization=bata_organization,
+                password=user_data["password"]
+            )
+            self.stdout.write(self.style.SUCCESS(f'User "{user.username}" created successfully!'))
