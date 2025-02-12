@@ -3,7 +3,7 @@ from .models import User, Organization
 
 # Register the Organization model
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ['organization_id', 'organization_name', 'address', 'created_at', 'updated_at']
+    list_display = ['id', 'organization_name', 'address', 'created_at', 'updated_at']
     search_fields = ['organization_name']
     list_filter = ['created_at']
 

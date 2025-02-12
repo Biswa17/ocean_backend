@@ -41,8 +41,7 @@ class ShippingLiner(models.Model):
 
 
 # ShippingLinerRoutes model for linking routes with shipping liners
-class ShippingLinerRoutes(models.Model):
-    liner = models.ForeignKey(ShippingLiner, on_delete=models.CASCADE)
+class ShippingRoutes(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     ship = models.ForeignKey(Ship, on_delete=models.CASCADE)  # Associate ship with a route
     pricing_model = models.CharField(max_length=100, choices=[('per_teu', 'Per TEU'), ('per_ton', 'Per Ton'), ('flat_rate', 'Flat Rate')])
@@ -54,7 +53,7 @@ class ShippingLinerRoutes(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "shippingliner_routes_rel"
+        db_table = "shipping_routes_rel"
 
     def __str__(self):
         return f"{self.liner.name} on {self.route.name} with {self.ship.name}"

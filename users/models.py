@@ -5,8 +5,6 @@ class Organization(models.Model):
     class Meta:
         db_table = 'organization'
 
-
-    organization_id = models.AutoField(primary_key=True)
     organization_name = models.CharField(max_length=255)
     address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,7 +44,7 @@ class CustomUserManager(BaseUserManager):
         
         if organization:  # If organization is provided, fetch the instance
             try:
-                organization_instance = Organization.objects.get(organization_id=organization)
+                organization_instance = Organization.objects.get(id=organization)
             except ObjectDoesNotExist:
                 raise ValueError("Invalid organization ID. Organization does not exist.")
         else:
