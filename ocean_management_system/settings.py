@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'users.User'
 
+ALLOWED_HOSTS = ['172.31.91.157', '3.86.12.31', 'localhost', '127.0.0.1']
 
 
 MIDDLEWARE = [
