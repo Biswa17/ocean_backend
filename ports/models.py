@@ -44,7 +44,7 @@ class Yard(models.Model):
 
 class Lane(models.Model):
     # Primary Key
-    lane_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     
     # Foreign Keys referencing Ports for origin and destination
     from_port = models.ForeignKey(Port, related_name='from_ports', on_delete=models.CASCADE)

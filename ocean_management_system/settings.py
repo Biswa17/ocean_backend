@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     'ports',
+    'routes',
+    'shipping'
 ]
 
 AUTH_USER_MODEL = 'users.User'
