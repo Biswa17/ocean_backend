@@ -58,6 +58,7 @@ AUTH_USER_MODEL = 'users.User'
 
 ALLOWED_HOSTS = ['172.31.91.157', '3.86.12.31', 'localhost', '127.0.0.1']
 
+APPEND_SLASH = False
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -67,6 +68,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Force JSON responses for errors
+    'ocean_management_system.middleware.JsonErrorMiddleware',
 ]
 
 ROOT_URLCONF = 'ocean_management_system.urls'
