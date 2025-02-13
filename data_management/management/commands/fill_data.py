@@ -90,8 +90,6 @@ class Command(BaseCommand):
                 "name": "India to South Africa",
                 "total_distance": 7000,
                 "estimated_duration": 14,
-                "preferred_fuel_type": "Diesel",
-                "cargo_capacity": 10000,
                 "route_status": "active",
                 "lanes": [("INBOM", "ZADUR"), ("INBOM", "ZACTP"), ("INBOM", "NGLOS")]  # Lane data
             },
@@ -99,8 +97,6 @@ class Command(BaseCommand):
                 "name": "India to Australia",
                 "total_distance": 8000,
                 "estimated_duration": 17,
-                "preferred_fuel_type": "Diesel",
-                "cargo_capacity": 11000,
                 "route_status": "active",
                 "lanes": [("INBOM", "AUSYD"), ("INMAA", "AUMEL")]  # Lane data
             },
@@ -108,8 +104,6 @@ class Command(BaseCommand):
                 "name": "India to Kenya",
                 "total_distance": 6000,
                 "estimated_duration": 12,
-                "preferred_fuel_type": "Diesel",
-                "cargo_capacity": 8000,
                 "route_status": "active",
                 "lanes": [("INBOM", "KENBO")]  # Lane data
             },
@@ -117,8 +111,6 @@ class Command(BaseCommand):
                 "name": "India to Middle East",
                 "total_distance": 7500,
                 "estimated_duration": 15,
-                "preferred_fuel_type": "Gasoline",
-                "cargo_capacity": 9500,
                 "route_status": "active",
                 "lanes": [("INBOM", "ZACTP"), ("INBOM", "NGLOS")]  # Lane data
             },
@@ -126,8 +118,6 @@ class Command(BaseCommand):
                 "name": "India to Europe",
                 "total_distance": 8500,
                 "estimated_duration": 18,
-                "preferred_fuel_type": "Diesel",
-                "cargo_capacity": 12000,
                 "route_status": "active",
                 "lanes": [("INMAA", "ZACTP"), ("INKOL", "ZADUR"), ("INKOL", "ZACTP")]  # Lane data
             },
@@ -135,8 +125,6 @@ class Command(BaseCommand):
                 "name": "India to Africa",
                 "total_distance": 7800,
                 "estimated_duration": 16,
-                "preferred_fuel_type": "Diesel",
-                "cargo_capacity": 10000,
                 "route_status": "active",
                 "lanes": [("INMAA", "ZADUR"), ("INKOL", "ZACTP"), ("INBOM", "ZACTP")]  # Lane data (reuse of ZACTP)
             },
@@ -144,8 +132,6 @@ class Command(BaseCommand):
                 "name": "India to South America",
                 "total_distance": 9000,
                 "estimated_duration": 19,
-                "preferred_fuel_type": "Gasoline",
-                "cargo_capacity": 13000,
                 "route_status": "active",
                 "lanes": [("INBOM", "AUSYD"), ("INKOL", "AUPER"), ("INMAA", "ZADUR"), ("INKOL", "ZACTP")]  # Lane data (reuse of INKOL-ZACTP)
             },
@@ -153,8 +139,6 @@ class Command(BaseCommand):
                 "name": "India to Southeast Asia",
                 "total_distance": 7000,
                 "estimated_duration": 14,
-                "preferred_fuel_type": "Diesel",
-                "cargo_capacity": 10500,
                 "route_status": "active",
                 "lanes": [("INBOM", "NGLOS"), ("INMAA", "ZACTP"), ("INKOL", "AUSYD")]  # Lane data
             }
@@ -167,8 +151,6 @@ class Command(BaseCommand):
                 name=route_data["name"], 
                 total_distance=route_data["total_distance"],
                 estimated_duration=route_data["estimated_duration"],
-                preferred_fuel_type=route_data["preferred_fuel_type"],
-                cargo_capacity=route_data["cargo_capacity"],
                 route_status=route_data["route_status"]
             )
             

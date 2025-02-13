@@ -6,8 +6,6 @@ class Route(models.Model):
     name = models.CharField(max_length=255)
     total_distance = models.FloatField()
     estimated_duration = models.FloatField()  # In days or hours
-    preferred_fuel_type = models.CharField(max_length=50)
-    cargo_capacity = models.FloatField()  # Capacity in tons or TEUs
     route_status = models.CharField(max_length=50, choices=[('active', 'Active'), ('seasonal', 'Seasonal'), ('under_construction', 'Under Construction')])
 
     created_at = models.DateTimeField(auto_now_add=True)

@@ -7,6 +7,7 @@ class Ship(models.Model):
     name = models.CharField(max_length=255)
     registration_number = models.CharField(max_length=255, unique=True)
     ship_type = models.CharField(max_length=100)
+    preferred_fuel_type = models.CharField(max_length=50,default="Diesel")
     capacity = models.FloatField()  # Capacity in TEUs or tons
     flag = models.CharField(max_length=100)  # Country or flag state
     shipping_liner = models.ForeignKey('ShippingLiner', on_delete=models.CASCADE, related_name='ships')
