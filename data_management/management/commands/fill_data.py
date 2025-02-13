@@ -1,11 +1,13 @@
 from django.core.management.base import BaseCommand
 from ports.models import Port, Lane
-from routes.models import Route
+from routes.models import Route,RouteLanes
 from shipping.models import Ship, ShippingLiner, ShippingRoutes
 from users.models import Organization, User
 from django.utils import timezone
 import random
 from django.db import connection
+from datetime import datetime, timedelta
+import random
 
 class Command(BaseCommand):
     help = 'Fill all tables with dummy data'
@@ -84,17 +86,120 @@ class Command(BaseCommand):
 
     def populate_routes(self):
         routes_data = [
-            {"name": "India to South Africa", "total_distance": 7000, "estimated_duration": 14, "preferred_fuel_type": "Diesel", "cargo_capacity": 10000, "route_status": "active"},
+            {
+                "name": "India to South Africa",
+                "total_distance": 7000,
+                "estimated_duration": 14,
+                "preferred_fuel_type": "Diesel",
+                "cargo_capacity": 10000,
+                "route_status": "active",
+                "lanes": [("INBOM", "ZADUR"), ("INBOM", "ZACTP"), ("INBOM", "NGLOS")]  # Lane data
+            },
+            {
+                "name": "India to Australia",
+                "total_distance": 8000,
+                "estimated_duration": 17,
+                "preferred_fuel_type": "Diesel",
+                "cargo_capacity": 11000,
+                "route_status": "active",
+                "lanes": [("INBOM", "AUSYD"), ("INMAA", "AUMEL")]  # Lane data
+            },
+            {
+                "name": "India to Kenya",
+                "total_distance": 6000,
+                "estimated_duration": 12,
+                "preferred_fuel_type": "Diesel",
+                "cargo_capacity": 8000,
+                "route_status": "active",
+                "lanes": [("INBOM", "KENBO")]  # Lane data
+            },
+            {
+                "name": "India to Middle East",
+                "total_distance": 7500,
+                "estimated_duration": 15,
+                "preferred_fuel_type": "Gasoline",
+                "cargo_capacity": 9500,
+                "route_status": "active",
+                "lanes": [("INBOM", "ZACTP"), ("INBOM", "NGLOS")]  # Lane data
+            },
+            {
+                "name": "India to Europe",
+                "total_distance": 8500,
+                "estimated_duration": 18,
+                "preferred_fuel_type": "Diesel",
+                "cargo_capacity": 12000,
+                "route_status": "active",
+                "lanes": [("INMAA", "ZACTP"), ("INKOL", "ZADUR"), ("INKOL", "ZACTP")]  # Lane data
+            },
+            {
+                "name": "India to Africa",
+                "total_distance": 7800,
+                "estimated_duration": 16,
+                "preferred_fuel_type": "Diesel",
+                "cargo_capacity": 10000,
+                "route_status": "active",
+                "lanes": [("INMAA", "ZADUR"), ("INKOL", "ZACTP"), ("INBOM", "ZACTP")]  # Lane data (reuse of ZACTP)
+            },
+            {
+                "name": "India to South America",
+                "total_distance": 9000,
+                "estimated_duration": 19,
+                "preferred_fuel_type": "Gasoline",
+                "cargo_capacity": 13000,
+                "route_status": "active",
+                "lanes": [("INBOM", "AUSYD"), ("INKOL", "AUPER"), ("INMAA", "ZADUR"), ("INKOL", "ZACTP")]  # Lane data (reuse of INKOL-ZACTP)
+            },
+            {
+                "name": "India to Southeast Asia",
+                "total_distance": 7000,
+                "estimated_duration": 14,
+                "preferred_fuel_type": "Diesel",
+                "cargo_capacity": 10500,
+                "route_status": "active",
+                "lanes": [("INBOM", "NGLOS"), ("INMAA", "ZACTP"), ("INKOL", "AUSYD")]  # Lane data
+            }
         ]
+
+        
         for route_data in routes_data:
-            Route.objects.get_or_create(**route_data)
-        self.stdout.write(self.style.SUCCESS('Routes data populated successfully!'))
+            # Create the route without lanes
+            route, created = Route.objects.get_or_create(
+                name=route_data["name"], 
+                total_distance=route_data["total_distance"],
+                estimated_duration=route_data["estimated_duration"],
+                preferred_fuel_type=route_data["preferred_fuel_type"],
+                cargo_capacity=route_data["cargo_capacity"],
+                route_status=route_data["route_status"]
+            )
+            
+            # Print success message for route creation
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Route "{route.name}" created successfully!'))
+            else:
+                self.stdout.write(self.style.SUCCESS(f'Route "{route.name}" already exists!'))
+            
+            # Add lanes to the route
+            for lane_tuple in route_data["lanes"]:
+                from_port = Port.objects.get(code=lane_tuple[0])  # Get the 'from' port
+                to_port = Port.objects.get(code=lane_tuple[1])  # Get the 'to' port
+                lane, lane_created = Lane.objects.get_or_create(from_port=from_port, to_port=to_port)
+
+                # Create or get the lane association between the route and the lane
+                RouteLanes.objects.get_or_create(route=route, lane=lane)
+            
+            self.stdout.write(self.style.SUCCESS(f'Lanes for Route "{route.name}" added successfully!'))
+        
+        self.stdout.write(self.style.SUCCESS('Routes and lanes data populated successfully!'))
+
 
     def populate_shipping_liners(self):
         liners_data = [
             {"name": "Maersk Line", "contact_details": "contact@maersk.com", "fleet_size": 700, "operational_area": "Global", "type_of_vessels": "Container Ships", "rating": 9},
             {"name": "MSC", "contact_details": "contact@msc.com", "fleet_size": 600, "operational_area": "Global", "type_of_vessels": "Bulk Carriers", "rating": 8},
+            {"name": "CMA CGM", "contact_details": "contact@cma-cgm.com", "fleet_size": 500, "operational_area": "Global", "type_of_vessels": "Container Ships", "rating": 8},
+            {"name": "Evergreen Marine", "contact_details": "contact@evergreen-marine.com", "fleet_size": 200, "operational_area": "Global", "type_of_vessels": "Container Ships", "rating": 7},
         ]
+
         for liner in liners_data:
             ShippingLiner.objects.get_or_create(**liner)
         self.stdout.write(self.style.SUCCESS('Shipping Liners data populated successfully!'))
@@ -102,22 +207,89 @@ class Command(BaseCommand):
     def populate_ships(self):
         liners = list(ShippingLiner.objects.all())
         ships_data = [
-            {"name": "Ever Given", "registration_number": "EG12345", "ship_type": "Container Ship", "capacity": 20000, "flag": "Panama", "shipping_liner": random.choice(liners)},
-            {"name": "MSC Oscar", "registration_number": "MSC98765", "ship_type": "Container Ship", "capacity": 19000, "flag": "Liberia", "shipping_liner": random.choice(liners)},
+            # Maersk Line Ships (ID 1)
+            {"name": "Ever Given", "registration_number": "EG12345", "ship_type": "Container Ship", "capacity": 20000, "flag": "Panama", "shipping_liner": liners[0]},
+            {"name": "Maersk Alabama", "registration_number": "MA12346", "ship_type": "Container Ship", "capacity": 18000, "flag": "Denmark", "shipping_liner": liners[0]},
+            {"name": "Maersk Emerald", "registration_number": "ME12347", "ship_type": "Container Ship", "capacity": 19000, "flag": "Denmark", "shipping_liner": liners[0]},
+            {"name": "Maersk Heidelberg", "registration_number": "MH12348", "ship_type": "Container Ship", "capacity": 21000, "flag": "Denmark", "shipping_liner": liners[0]},
+            
+            # MSC Ships (ID 2)
+            {"name": "MSC Oscar", "registration_number": "MSC98765", "ship_type": "Container Ship", "capacity": 19000, "flag": "Liberia", "shipping_liner": liners[1]},
+            {"name": "MSC Zoe", "registration_number": "MSC98766", "ship_type": "Container Ship", "capacity": 18000, "flag": "Liberia", "shipping_liner": liners[1]},
+            {"name": "MSC Ines", "registration_number": "MSC98767", "ship_type": "Container Ship", "capacity": 17000, "flag": "Liberia", "shipping_liner": liners[1]},
+            {"name": "MSC Laila", "registration_number": "MSC98768", "ship_type": "Container Ship", "capacity": 16000, "flag": "Liberia", "shipping_liner": liners[1]},
+            
+            # CMA CGM Ships (ID 3)
+            {"name": "CMA CGM Louis", "registration_number": "CGL12345", "ship_type": "Container Ship", "capacity": 20000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "CMA CGM Topaz", "registration_number": "CGL12346", "ship_type": "Container Ship", "capacity": 18000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "CMA CGM Marco Polo", "registration_number": "CGL12347", "ship_type": "Container Ship", "capacity": 19000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "CMA CGM Tigris", "registration_number": "CGL12348", "ship_type": "Container Ship", "capacity": 17000, "flag": "France", "shipping_liner": liners[2]},
+            
+            # Evergreen Marine Ships (ID 4)
+            {"name": "Evergreen Eternal", "registration_number": "EE12345", "ship_type": "Container Ship", "capacity": 16000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            {"name": "Evergreen Glory", "registration_number": "EG12346", "ship_type": "Container Ship", "capacity": 15000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            {"name": "Evergreen Unity", "registration_number": "EU12345", "ship_type": "Container Ship", "capacity": 18000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            {"name": "Evergreen Pride", "registration_number": "EP12345", "ship_type": "Container Ship", "capacity": 17000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            
+            # Additional ships to complete 30 entries
+            {"name": "CMA CGM Virginia", "registration_number": "CGL12349", "ship_type": "Container Ship", "capacity": 20000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "Maersk Harmony", "registration_number": "MH12349", "ship_type": "Container Ship", "capacity": 21000, "flag": "Denmark", "shipping_liner": liners[0]},
+            {"name": "MSC Alina", "registration_number": "MSC98769", "ship_type": "Container Ship", "capacity": 19000, "flag": "Liberia", "shipping_liner": liners[1]},
+            {"name": "MSC Isabella", "registration_number": "MSC98770", "ship_type": "Container Ship", "capacity": 18000, "flag": "Liberia", "shipping_liner": liners[1]},
+            {"name": "CMA CGM Genesis", "registration_number": "CGL12350", "ship_type": "Container Ship", "capacity": 19000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "CMA CGM Beluga", "registration_number": "CGL12351", "ship_type": "Container Ship", "capacity": 18000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "Evergreen Phoenix", "registration_number": "EP12346", "ship_type": "Container Ship", "capacity": 16000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            {"name": "Evergreen Freedom", "registration_number": "EF12345", "ship_type": "Container Ship", "capacity": 15000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            {"name": "MSC Harmony", "registration_number": "MSC98771", "ship_type": "Container Ship", "capacity": 19000, "flag": "Liberia", "shipping_liner": liners[1]},
+            {"name": "Maersk Progress", "registration_number": "MP12345", "ship_type": "Container Ship", "capacity": 20000, "flag": "Denmark", "shipping_liner": liners[0]},
+            {"name": "Maersk Phoenix", "registration_number": "MP12346", "ship_type": "Container Ship", "capacity": 21000, "flag": "Denmark", "shipping_liner": liners[0]},
+            {"name": "CMA CGM Fortune", "registration_number": "CGL12352", "ship_type": "Container Ship", "capacity": 18000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "CMA CGM Discovery", "registration_number": "CGL12353", "ship_type": "Container Ship", "capacity": 17000, "flag": "France", "shipping_liner": liners[2]},
+            {"name": "Evergreen Star", "registration_number": "ES12345", "ship_type": "Container Ship", "capacity": 16000, "flag": "Taiwan", "shipping_liner": liners[3]},
+            {"name": "Evergreen Brave", "registration_number": "EB12345", "ship_type": "Container Ship", "capacity": 15000, "flag": "Taiwan", "shipping_liner": liners[3]},
         ]
         for ship_data in ships_data:
             Ship.objects.get_or_create(**ship_data)
         self.stdout.write(self.style.SUCCESS('Ships data populated successfully!'))
 
+ 
+
     def populate_shipping_routes(self):
         routes = list(Route.objects.all())
         ships = list(Ship.objects.all())
-        routes_data = [
-            {"route": random.choice(routes), "ship": random.choice(ships), "pricing_model": "per_teu", "departure_schedule": ["2025-03-01T10:00:00Z"], "arrival_schedule": ["2025-03-15T18:00:00Z"], "liner_vessel_types": "Container Ships"},
-        ]
+        
+        # Initialize an empty list to hold the routes data
+        routes_data = []
+
+        # Loop to generate 30 shipping routes
+        for _ in range(50):
+            route = random.choice(routes)
+            ship = random.choice(ships)
+
+            # Calculate departure and arrival schedules based on estimated duration
+            departure_schedule = datetime.utcnow()
+            arrival_schedule = departure_schedule + timedelta(days=route.estimated_duration)
+
+            # Create the route entry
+            route_entry = {
+                "route": route,
+                "ship": ship,
+                "pricing_model": "per_teu",
+                "departure_schedule": [departure_schedule.strftime("%Y-%m-%dT%H:%M:%SZ")],
+                "arrival_schedule": [arrival_schedule.strftime("%Y-%m-%dT%H:%M:%SZ")],
+                "liner_vessel_types": "Container Ships"
+            }
+
+            # Append the route entry to the list
+            routes_data.append(route_entry)
+
+        # Insert the route data into the database
         for route_data in routes_data:
             ShippingRoutes.objects.get_or_create(**route_data)
+
+        # Success message
         self.stdout.write(self.style.SUCCESS('Shipping Routes data populated successfully!'))
+
 
     def populate_organizations(self):
         # Create the organization "Bata"
