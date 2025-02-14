@@ -23,4 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),  # Add this line
     path('api/', include('ports.urls')),  # Add this line
+    path('api/', include('routes.urls')),  # Add this line
 ]
