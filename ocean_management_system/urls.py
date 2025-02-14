@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/users/', include('users.urls')),  # Add this line
     path('api/', include('ports.urls')),  # Add this line
     path('api/', include('routes.urls')),  # Add this line
+    path('api/', include('shipping.urls')),  # Add this line
 ]
