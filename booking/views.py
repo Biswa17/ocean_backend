@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Cargo, Booking
-from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer
+from .models import Cargo, Booking, Tracking
+from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer,TrackingSerializer
 from ocean_management_system.utils.response import custom_response
 from rest_framework.pagination import PageNumberPagination
 
@@ -97,7 +97,14 @@ def list_booking(request):
     paginator = PageNumberPagination()
     paginator.page_size = per_page  # Set the page size dynamically
 
+    # Get user_id filter (optional)
+    user_id = request.GET.get('user_id', None)
+
     bookings = Booking.objects.all()
+
+    # Apply user_id filter if provided
+    if user_id:
+        bookings = bookings.filter(user_id=user_id)
 
     # Apply pagination
     paginated_bookings = paginator.paginate_queryset(bookings, request)
@@ -125,7 +132,7 @@ def booking_detail(request, id):
 
     booking = Booking.objects.filter(id=id).first()
     if booking:
-        serializer = BookingSerializer(booking)
+        serializer = BookingDetailSerializer(booking)
         response = serializer.data
         message = "Booking details retrieved successfully."
     else:
@@ -153,5 +160,76 @@ def update_booking(request, id):
         response = serializer.errors
         status = 400
         message = "Validation failed."
+
+    return custom_response(response, status, message)
+
+
+@api_view(['POST'])
+def create_tracking(request):
+    response = []
+    status = 200
+    message = ""
+
+    try:
+        data = request.data  # No need for JSONParser
+        booking_id = data.get("booking_id")
+
+        # Validate booking_id
+        if not booking_id:
+            message = "Booking ID is required"
+            status = 404
+            return custom_response(response, status, message)
+
+        # Check if the booking exists
+        booking = Booking.objects.filter(id=booking_id).first()
+        if not booking:
+            message = "Booking not found"
+            status = 404
+            return custom_response(response, status, message)
+
+        # Use serializer for validation and creation
+        serializer = TrackingSerializer(data=data)
+        if serializer.is_valid():
+            tracking = serializer.save()  # Creates tracking instance
+
+            # Link tracking to booking
+            booking.tracking = tracking
+            booking.save()
+
+            response = serializer.data
+            message = "Tracking created successfully"
+        else:
+            status = 400
+            message = serializer.errors
+
+    except Exception as e:
+        status = 500
+        message = f"Error: {str(e)}"
+
+    return custom_response(response, status, message)
+
+
+@api_view(['GET'])
+def get_tracking_details(request, id):
+    response = []
+    status = 200
+    message = ""
+
+    try:
+        # Fetch tracking object
+        tracking = Tracking.objects.filter(id=id).first()
+        
+        if not tracking:
+            message = "Tracking details not found"
+            return custom_response(response, status, message)
+
+        # Serialize and return data
+        serializer = TrackingSerializer(tracking)
+        response = serializer.data
+        message = "Tracking details retrieved successfully"
+
+    except Exception as e:
+        status = 500
+        message = f"Error: {str(e)}"
 
     return custom_response(response, status, message)

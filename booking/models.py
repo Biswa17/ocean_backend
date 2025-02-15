@@ -32,6 +32,8 @@ class Booking(models.Model):
     cargo = models.ForeignKey(Cargo, on_delete=models.CASCADE, related_name='bookings',null=True, blank=True)
     shipping_route = models.ForeignKey('shipping.ShippingRoutes', on_delete=models.CASCADE, related_name='bookings', null=True, blank=True)
     lane = models.ForeignKey('ports.Lane', related_name='bookings', on_delete=models.CASCADE, null=True, blank=True)
+    tracking = models.OneToOneField('Tracking', on_delete=models.SET_NULL, related_name='booking', null=True, blank=True)
+
 
     status = models.CharField(max_length=50, choices=[('draft', 'Draft'),('pending', 'Pending'), ('confirmed', 'Confirmed'), ('shipped', 'Shipped'), ('delivered', 'Delivered')], default='draft')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -44,3 +46,28 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"Booking {self.id} - {self.status}"
+    
+class Tracking(models.Model):
+    STATUS_CHOICES = [
+        ('initiated', 'Initiated'),
+        ('in_transit', 'In Transit'),
+        ('arrived', 'Arrived'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled')
+    ]
+
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='initiated')
+    location = models.CharField(max_length=255, null=True, blank=True)  # Latest location
+    estimated_arrival = models.DateTimeField(null=True, blank=True)  # Estimated delivery date/time
+    remarks = models.TextField(null=True, blank=True)  # Optional comments
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+    class Meta:
+        db_table = "tracking"
+
+    def __str__(self):
+        return f"Tracking {self.id} - {self.status}"
+
