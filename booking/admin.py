@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Booking, Tracking,Document
+
+admin.site.register(Booking)
+admin.site.register(Tracking)
+admin.site.register(Document)
