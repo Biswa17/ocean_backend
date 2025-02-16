@@ -309,9 +309,9 @@ class Command(BaseCommand):
 
         # Create a few more dummy users with the "Bata" organization
         dummy_users_data = [
-            {"username": "biswa", "email": "biswa@ximble", "phone_number": "1234567891", "password": "password123"},
-            {"username": "anil", "email": "anil@ximble", "phone_number": "1234567892", "password": "password123"},
-            {"username": "akash", "email": "akash@ximble", "phone_number": "1234567893", "password": "password123"},
+            {"username": "biswa", "email": "biswa@ximble", "phone_number": "1234567891", "password": "ximble"},
+            {"username": "anil", "email": "anil@ximble", "phone_number": "1234567892", "password": "ximble"},
+            {"username": "akash", "email": "akash@ximble", "phone_number": "1234567893", "password": "ximble"},
         ]
         for user_data in dummy_users_data:
             user = User.objects.create_user(
