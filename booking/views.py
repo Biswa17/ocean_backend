@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from .models import Booking, Tracking
 from cargo.models import Cargo
 from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer,TrackingSerializer
-from ocean_management_system.utils.response import custom_response, has_permission_to_update
+from ocean_management_system.utils.response import custom_response, has_permission
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from ocean_management_system.decorators import user_filter_decorator
@@ -75,18 +75,27 @@ def list_booking(request):
     return custom_response(response, status, message)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def booking_detail(request, id):
     response = []
     status = 200
     message = ""
 
     booking = Booking.objects.filter(id=id).first()
+    if not booking:
+        response = []
+        status = 404
+        message = 'Booking not found.'
+        return custom_response(response, status, message)
+        
+    if not has_permission(request.user, booking):
+        return custom_response({}, 403, "You do not have permission to view this booking.")
+
     if booking:
         serializer = BookingDetailSerializer(booking)
         response = serializer.data
         message = "Booking details retrieved successfully."
-    else:
-        message = "Booking not found."
+    
 
     return custom_response(response, status, message)
 
@@ -103,7 +112,7 @@ def update_booking(request, id):
         return custom_response(response, status, message)
     
     # Use the generic permission checker
-    if not has_permission_to_update(request.user, booking):
+    if not has_permission(request.user, booking):
         return custom_response({}, 403, "You do not have permission to update this booking.")
 
     serializer = BookingSerializer(booking, data=request.data, partial=True)

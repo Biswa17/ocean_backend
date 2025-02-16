@@ -98,7 +98,7 @@ def custom_exception_handler(exc, context):
     return response  # Return default DRF response if no custom handling is needed
 
 
-def has_permission_to_update(user, instance):
+def has_permission(user, instance):
     """
     Generic permission checker for model updates.
     - Allows update if the user is an admin.
