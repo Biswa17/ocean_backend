@@ -20,6 +20,11 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ['id', 'user', 'cargo','lane','shipping_route','tracking', 'status', 'total_price']
+    
+    def update(self, instance, validated_data):
+        # Prevent user_id from being updated
+        validated_data.pop('user', None)  # Remove user field if it's in the request
+        return super().update(instance, validated_data)
 
 class TrackingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,8 +36,8 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested user details
     cargo = CargoSerializer()  # Nested cargo details
 
-    from_port = serializers.CharField(source="lane.from_port.port_name", read_only=True)
-    to_port = serializers.CharField(source="lane.to_port.port_name", read_only=True)
+    from_port = PortSerializer(source="lane.from_port", read_only=True)  # Full Port object
+    to_port = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
 
     tracking = TrackingSerializer()
 
@@ -40,5 +45,5 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'cargo', 'from_port', 'to_port' ,'shipping_route', 'status', 'total_price','tracking']
+        fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port' , 'tracking', 'shipping_route']
 

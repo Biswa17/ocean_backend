@@ -70,8 +70,13 @@ def custom_exception_handler(exc, context):
 
     if response is not None:
         # Handle specific DRF exceptions
-        if isinstance(exc, (AuthenticationFailed, NotAuthenticated)):
-            return custom_response(data={}, status=401, message="Invalid or missing or Expired authentication token")
+        # Authentication Errors (401)
+        if isinstance(exc, NotAuthenticated):
+            return custom_response(data={}, status=401, message="Missing authentication token")
+
+        elif isinstance(exc, AuthenticationFailed):
+            return custom_response(data={}, status=401, message="Token is invalid or expired")
+            
 
         if isinstance(exc, PermissionDenied):
             return custom_response(data={}, status=403, message="You do not have permission to perform this action")
@@ -91,3 +96,18 @@ def custom_exception_handler(exc, context):
         return custom_response(data={}, status=500, message="An unexpected error occurred. Please try again later")
 
     return response  # Return default DRF response if no custom handling is needed
+
+
+def has_permission_to_update(user, instance):
+    """
+    Generic permission checker for model updates.
+    - Allows update if the user is an admin.
+    - Allows update if the user owns the instance (has a `user` field).
+    """
+    if user.is_admin:
+        return True
+
+    if hasattr(instance, "user"):
+        return instance.user == user
+
+    return False  # Deny update if `user` field does not exist

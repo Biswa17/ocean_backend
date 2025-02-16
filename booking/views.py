@@ -1,21 +1,26 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from .models import Booking, Tracking
 from cargo.models import Cargo
 from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer,TrackingSerializer
-from ocean_management_system.utils.response import custom_response
+from ocean_management_system.utils.response import custom_response, has_permission_to_update
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework.permissions import IsAuthenticated
+from ocean_management_system.decorators import user_filter_decorator
 
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_booking(request):
     response = []
     status = 200
     message = ""
 
-    serializer = BookingSerializer(data=request.data)
+    data = request.data.copy()  # Create a mutable copy of request data
+    data['user'] = request.user.id  # Assign the authenticated user's ID
+
+    serializer = BookingSerializer(data=data)
     if serializer.is_valid():
         serializer.save()
         response = serializer.data
@@ -28,10 +33,14 @@ def create_booking(request):
     return custom_response(response, status, message)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@user_filter_decorator
 def list_booking(request):
     response = {}
     status = 200
     message = ""
+
+    user_id = request.user_filter_id
 
     # Get pagination parameters from query params
     page = int(request.GET.get('page', 1))  # Default page is 1
@@ -40,9 +49,6 @@ def list_booking(request):
     # Implementing pagination
     paginator = PageNumberPagination()
     paginator.page_size = per_page  # Set the page size dynamically
-
-    # Get user_id filter (optional)
-    user_id = request.GET.get('user_id', None)
 
     bookings = Booking.objects.all()
 
@@ -85,6 +91,7 @@ def booking_detail(request, id):
     return custom_response(response, status, message)
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def update_booking(request, id):
     response = []
     status = 200
@@ -94,6 +101,10 @@ def update_booking(request, id):
     if not booking:
         message = "Booking not found."
         return custom_response(response, status, message)
+    
+    # Use the generic permission checker
+    if not has_permission_to_update(request.user, booking):
+        return custom_response({}, 403, "You do not have permission to update this booking.")
 
     serializer = BookingSerializer(booking, data=request.data, partial=True)
     if serializer.is_valid():
