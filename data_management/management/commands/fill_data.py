@@ -3,11 +3,13 @@ from ports.models import Port, Lane
 from routes.models import Route,RouteLanes
 from shipping.models import Ship, ShippingLiner, ShippingRoutes
 from users.models import Organization, User
+from booking.models import Booking,Tracking,Document
 from django.utils import timezone
 import random
 from django.db import connection
 from datetime import datetime, timedelta
 import random
+from cargo.models import Cargo,Container
 
 class Command(BaseCommand):
     help = 'Fill all tables with dummy data'
@@ -22,6 +24,7 @@ class Command(BaseCommand):
         self.populate_shipping_liners()
         self.populate_ships()
         self.populate_shipping_routes()
+        self.create_booking()
         self.stdout.write(self.style.SUCCESS('All tables populated with dummy data!'))
     
     def truncate_tables(self):
@@ -35,6 +38,12 @@ class Command(BaseCommand):
             cursor.execute("TRUNCATE TABLE shipping_routes_rel RESTART IDENTITY CASCADE;")
             cursor.execute("TRUNCATE TABLE organizations RESTART IDENTITY CASCADE;")
             cursor.execute("TRUNCATE TABLE users RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE document RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE booking RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE tracking RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE cargo RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE container RESTART IDENTITY CASCADE;")
+
 
         self.stdout.write(self.style.WARNING('All tables truncated successfully!'))
 
@@ -313,3 +322,119 @@ class Command(BaseCommand):
                 password=user_data["password"]
             )
             self.stdout.write(self.style.SUCCESS(f'User "{user.username}" created successfully!'))
+
+    def create_booking(self):
+        """Creates 5 bookings for each specified user."""
+        usernames = ["anil", "biswa", "akash"]
+        
+        for username in usernames:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                self.stdout.write(self.style.ERROR(f"User {username} does not exist. Skipping..."))
+                continue  # Skip to the next user if not found
+
+            for _ in range(5):  # Create 5 bookings per user
+                self.create_booking_for_user(user)
+
+            self.stdout.write(self.style.SUCCESS(f"Successfully created 5 bookings for {username}."))
+
+
+
+
+    def create_booking_for_user(self,user):
+        """Creates a booking for user 'anil' with random cargo and route details."""
+        user = user
+
+        lane = Lane.objects.order_by('?').first()
+        # Fetch routes by lane
+        fetch_routes_by_lane = RouteLanes.objects.filter(lane=lane).values_list('route', flat=True)
+        # Get serviceable routes
+        serviceable_routes = list(ShippingRoutes.objects.filter(route__in=fetch_routes_by_lane))
+        if not serviceable_routes:
+            self.stdout.write(self.style.ERROR("No serviceable routes found."))
+            return
+        # Select a random shipping route
+        shipping_route = random.choice(serviceable_routes)
+        cargo = self.populate_cargo()
+
+        booking = Booking.objects.create(
+            user=user,
+            lane=lane,
+            cargo = cargo,
+            status="in_transit",
+            shipping_route=shipping_route,
+            total_price=random.uniform(5000, 50000)  # Random price between 5000 and 50000
+        )
+
+        # Possible tracking locations
+        possible_locations = [
+            "Port A - Shipment Departed",
+            "Distribution Center - Processing",
+            "Loading Dock - Awaiting Transport",
+            "Cargo Hold - Secure",
+            "Customs Clearance - In Progress"
+        ]
+
+        # Random remarks
+        possible_remarks = [
+            "Shipment is being processed.",
+            "Loaded onto vessel.",
+            "Awaiting clearance at customs.",
+            "Cargo is secured and ready for transport.",
+            "Preparing for departure."
+        ]
+
+        # Create initial tracking entry with randomized location and remarks
+        tracking = Tracking.objects.create(
+            status="in_transit",
+            location=random.choice(possible_locations),  # Random initial location
+            estimated_arrival=timezone.now() + timezone.timedelta(days=random.randint(3, 15)),  # Random ETA
+            remarks=random.choice(possible_remarks),  # Random remark
+        )
+
+        self.stdout.write(self.style.SUCCESS(f"Booking {booking.id} created for user {user.username}"))
+
+
+
+    def populate_cargo(self):
+        """Creates one random cargo and adds two random containers to it."""
+
+        # Define possible cargo types
+        CARGO_TYPES = ['fabrics', 'electronics', 'machinery', 'general', 'hazardous', 'refrigerated']
+        IS_TEMPERATURE_CONTROLLED = [True, False]
+        IS_DANGEROUS = [True, False]
+
+        # Define possible container types
+        CONTAINER_TYPES = [
+            '20ft_standard', '40ft_standard', '20ft_reefer', '40ft_reefer',
+            'flat_rack', 'open_top', 'tank', 'custom'
+        ]
+        USAGE_OPTIONS = [
+            ['shipper_container'], 
+            ['import_return'], 
+            ['oversized'], 
+            ['shipper_container', 'import_return'], 
+            ['shipper_container', 'oversized']
+        ]
+
+        # Create a random cargo
+        cargo = Cargo.objects.create(
+            cargo_type=random.choice(CARGO_TYPES),
+            is_temperature_controlled=random.choice(IS_TEMPERATURE_CONTROLLED),
+            is_dangerous=random.choice(IS_DANGEROUS),
+            description=f"Random description {random.randint(100, 999)}",
+            earliest_departure_date=None  # Can be set dynamically if needed
+        )
+
+        # Create two random containers linked to the cargo
+        for _ in range(2):
+            Container.objects.create(
+                cargo=cargo,
+                container_type_size=random.choice(CONTAINER_TYPES),
+                number_of_containers=random.randint(1, 10),
+                weight_per_container=round(random.uniform(5.0, 30.0), 2),  # Weight in tons
+                container_usage_options=random.choice(USAGE_OPTIONS)
+            )
+
+        return cargo
