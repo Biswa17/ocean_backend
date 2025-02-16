@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from cargo.models import Cargo
-from .serializers import CargoSerializer
+from .models import Cargo, Container
+from .serializers import CargoSerializer, ContainerSerializer
 from ocean_management_system.utils.response import custom_response
 from rest_framework.pagination import PageNumberPagination
 
@@ -58,6 +58,61 @@ def update_cargo(request, id):
         serializer.save()
         response = serializer.data
         message = "Cargo updated successfully."
+    else:
+        response = serializer.errors
+        status = 400
+        message = "Validation failed."
+
+    return custom_response(response, status, message)
+
+
+@api_view(['POST'])
+def create_container(request):
+    response = []
+    status = 200
+    message = ""
+
+    serializer = ContainerSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        response = serializer.data
+        message = "Container created successfully."
+    else:
+        response = serializer.errors
+        status = 400
+        message = "Validation failed."
+
+    return custom_response(response, status, message)
+
+@api_view(['GET'])
+def list_containers(request):
+    response = []
+    status = 200
+    message = ""
+
+    containers = Container.objects.all()
+    serializer = ContainerSerializer(containers, many=True)
+    response = serializer.data
+    message = "Container list retrieved successfully." if response else "No containers found."
+
+    return custom_response(response, status, message)
+
+@api_view(['PUT'])
+def update_container(request, id):
+    response = []
+    status = 200
+    message = ""
+
+    container = Container.objects.filter(id=id).first()
+    if not container:
+        message = "Container not found."
+        return custom_response(response, 404, message)
+
+    serializer = ContainerSerializer(container, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        response = serializer.data
+        message = "Container updated successfully."
     else:
         response = serializer.errors
         status = 400
