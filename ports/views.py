@@ -1,10 +1,15 @@
 from rest_framework import status
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.views import APIView
-from .models import Port
+from .models import Port, Lane
 from .serializers import PortSerializer
 from ocean_management_system.utils.response import custom_response
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
+from rest_framework.permissions import IsAuthenticated
+from routes.models import RouteLanes
+from shipping.models import ShippingRoutes
+from  shipping.serializers import ShippingRoutesSerializer
 
 class PortList(APIView):
     """
@@ -90,3 +95,54 @@ class PortDetail(APIView):
         serializer = PortSerializer(port)
         response = serializer.data
         return custom_response(data=response, status=status_code, message=message)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_lane_availability(request):
+    response = []
+    status = 200
+    message = ""
+
+    try:
+        from_port = request.GET.get('from_port')
+        to_port = request.GET.get('to_port')
+        departure_date = request.GET.get('departure_date', None)
+
+        if not from_port or not to_port:
+            status = 400
+            message = "Both from_port and to_port are required."
+            return custom_response(response, status, message)
+
+        # Check if the lane exists
+        lane = Lane.objects.filter(from_port_id=from_port, to_port_id=to_port).first()
+        if not lane:
+            status = 404
+            message = "No lane found for the given ports."
+            return custom_response(response, status, message)
+
+        # Fetch routes by lane
+        fetch_routes_by_lane = RouteLanes.objects.filter(lane=lane).values_list('route', flat=True)
+
+        serviceable_routes = ShippingRoutes.objects.filter(route__in=fetch_routes_by_lane)
+
+        if not serviceable_routes.exists():
+            status = 404
+            message = "No serviceable shipping routes available for the given lane."
+            return custom_response(response, status, message)
+
+        # Serialize the serviceable routes
+        serialized_routes = ShippingRoutesSerializer(serviceable_routes, many=True).data  
+
+        # Serialize response
+        response = {
+            "lane_id": lane.id,
+            "serviceable_routes": serialized_routes
+        }
+        message = "Lane and shipping route availability retrieved successfully."
+
+    except Exception as e:
+        status = 500
+        message = f"An error occurred: {str(e)}"
+
+    return custom_response(response, status, message)
