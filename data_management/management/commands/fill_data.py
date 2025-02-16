@@ -325,7 +325,7 @@ class Command(BaseCommand):
 
     def create_booking(self):
         """Creates 5 bookings for each specified user."""
-        usernames = ["anil", "biswa", "akash"]
+        usernames = ["anil", "biswa"]
         
         for username in usernames:
             try:
