@@ -1,25 +1,9 @@
 from rest_framework import serializers
-from .models import Cargo, Booking,Tracking,Container,Document
+from .models import Booking,Tracking,Document
+from cargo.serializers import CargoSerializer
 from users.serializers import UserSerializer  # Import from users app
 from ports.serializers import LaneSerializer  # Import from ports app
 from ports.serializers import PortSerializer  # Import PortSerializer
-from ports.models import Port  # Import Port model
-
-class CargoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cargo
-        fields = [
-            'id', 'type', 'description', 'temperature_control', 'dangerous_goods',
-            'earliest_departure_date',
-        ]
-
-class ContainerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Container
-        fields = [
-            'id', 'cargo', 'container_type_size', 'container_options',
-            'number_of_containers', 'weight_per_container', 'created_at', 'updated_at'
-        ]
 
 
 class DocumentSerializer(serializers.ModelSerializer):

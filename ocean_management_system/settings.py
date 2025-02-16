@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'routes',
     'shipping',
     'data_management',
-    'booking'
+    'booking',
+    'cargo'
 ]
 
 AUTH_USER_MODEL = 'users.User'
