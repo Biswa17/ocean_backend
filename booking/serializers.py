@@ -43,12 +43,27 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     to_port = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
 
     tracking = TrackingSerializer()
+    documents = DocumentSerializer(many=True)
 
     
     
     class Meta:
         model = Booking
-        fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port' , 'tracking', 'shipping_route']
+        fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port' , 'documents', 'tracking', 'shipping_route']
+
+class BookingListSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  # Nested user details
+    cargo = CargoSerializer()  # Nested cargo details
+
+    from_port = PortSerializer(source="lane.from_port", read_only=True)  # Full Port object
+    to_port = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
+
+    tracking = TrackingSerializer()
+    
+    class Meta:
+        model = Booking
+        fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port', 'tracking', 'shipping_route']
+
 
 
 class PortValidationSerializer(serializers.Serializer):
@@ -87,57 +102,4 @@ class PortValidationSerializer(serializers.Serializer):
             raise serializers.ValidationError("tp_port_inland_transport is required.")
 
         return data
-
-
-class CargoValidationSerializer(serializers.Serializer):
-    cargo_type = serializers.ChoiceField(choices=Cargo.CARGO_TYPE_CHOICES)
-    temperature_controlled = serializers.BooleanField()
-    dangerous_goods = serializers.BooleanField()
-
-    def validate(self, data):
-        cargo_type = data.get("cargo_type")
-        temperature_controlled = data.get("temperature_controlled")
-        dangerous_goods = data.get("dangerous_goods")
-
-        # Ensure that temperature_controlled and dangerous_goods are booleans
-        if not isinstance(temperature_controlled, bool):
-            raise serializers.ValidationError("temperature_controlled must be a boolean.")
-
-        if not isinstance(dangerous_goods, bool):
-            raise serializers.ValidationError("dangerous_goods must be a boolean.")
-
-        return data
-
-class ContainerValidationSerializer(serializers.Serializer):
-    container_type_size = serializers.ChoiceField(choices=Container.CONTAINER_TYPE_SIZE_CHOICES)  # Based on model choices
-    container_usage_options = serializers.ListField(
-        child=serializers.ChoiceField(choices=Container.USAGE_OPTIONS),  # Validate each option as a valid choice
-        required=False,  # Since it's a JSONField and can be empty, we mark it as not required
-        allow_empty=True  # Allow an empty list
-    )
-    number_of_containers = serializers.IntegerField(min_value=1)  # Ensures positive integer
-    weight_in_tons = serializers.FloatField(min_value=0.1)  # Ensures positive float (tons)
-
-    def validate(self, data):
-        container_usage_options = data.get("container_usage_options")
-        weight_in_tons = data.get("weight_in_tons")
-
-        # Ensure weight_in_tons is positive
-        if weight_in_tons <= 0:
-            raise serializers.ValidationError("weight_in_tons must be a positive value.")
-
-        # Validate container_usage_options (if provided)
-        if container_usage_options:
-            invalid_options = [option for option in container_usage_options if option not in dict(Container.USAGE_OPTIONS)]
-            if invalid_options:
-                raise serializers.ValidationError(f"Invalid container_usage_options: {', '.join(invalid_options)}.")
-
-        return data
-
-
-class BookingCreateValidationSerializer(serializers.Serializer):
-    port = PortValidationSerializer()
-    cargo = CargoValidationSerializer()
-    containers = ContainerValidationSerializer(many=True)
-
     

@@ -2,13 +2,14 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from .models import Booking, Tracking
 from cargo.models import Cargo
-from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer
+from ports.models import Lane
+from .serializers import  BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer, PortValidationSerializer,BookingListSerializer
 from ocean_management_system.utils.response import custom_response, has_permission
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from ocean_management_system.decorators import user_filter_decorator
-from .serializers import PortValidationSerializer,ContainerValidationSerializer
-from cargo.serializers import ContainerSerializer
+from cargo.serializers import ContainerSerializer,ContainerPartialValidationSerializer,CargoSerializer
+from django.db import transaction
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -18,60 +19,79 @@ def create_booking_full_info(request):
     message = ""
 
     data = request.data.copy()  # Create a mutable copy of request data
-    user_id = request.user.id  # Assign the authenticated user's ID
+    data['user'] = request.user.id  # Assign the authenticated user's ID
+    
 
-    # Validate port data
-    port_data = data.get('port')
-    port_serializer = validate_data(PortValidationSerializer, port_data, custom_response)
-    if isinstance(port_serializer, Response):
-        return port_serializer 
+    with transaction.atomic():
+        # Validate port data
+        port_data = data.get('port')
+        port_serializer = PortValidationSerializer(data=port_data)
+        if not port_serializer.is_valid():
+            return custom_response(port_serializer.errors, 400, "Validation failed.")
 
-    # Validate cargo data
-    cargo_data = data.get('cargo')
-    cargo_serializer = validate_data(CargoSerializer, cargo_data, custom_response)
-    if isinstance(cargo_serializer, Response):
-        return cargo_serializer  # Return early if cargo validation failed
+        # Get lane information from ports
+        from_port_id = port_data.get('from_port_id')
+        to_port_id = port_data.get('to_port_id')
+        try:
+            lane = Lane.objects.get(from_port_id=from_port_id, to_port_id=to_port_id)  # Assuming Lane model exists
+            data['lane'] = lane.id  # Adding lane ID to the booking data
+        except Lane.DoesNotExist:
+            return custom_response({"detail": "Invalid lane between the provided ports."}, 400, "Lane not found.")
 
-    # Validate container data (multiple containers)
-    container_list = data.get('containers')
-    for container_data in container_list:
-        containers = validate_data(ContainerValidationSerializer, container_data, custom_response)
-        if isinstance(containers, Response):
-            return containers
+
+        # Validate cargo data
+        cargo_data = data.get('cargo')  # Extract cargo data
+        cargo_serializer = CargoSerializer(data=cargo_data)
+        if not cargo_serializer.is_valid():
+            return custom_response(cargo_serializer.errors, 400, "Validation failed.")
+        
+        cargo = cargo_serializer.save()  # Save cargo and get the created object
+        data['cargo'] = cargo.id  # Add cargo ID to the data for booking
+
+        
+
+        # Validate container data (multiple containers)
+        container_list = data.get('containers')
+        for container_data in container_list:
+            container_data['cargo'] = cargo.id
+            containers_serializer = ContainerSerializer(data=container_data)
+            if not containers_serializer.is_valid():
+                return custom_response(containers_serializer.errors, 400, "Validation failed.")
+            
+            containers_serializer.save()
+        
+        
+        
+
+        # Initialize the serializer with the data
+        serializer = BookingSerializer(data=data)
+        if serializer.is_valid():
+            booking = serializer.save()
+            # Validate the data for documents
+            document_list = data.get('documents', [])
+            for document_data in document_list:
+                document_data['booking'] = booking.id
+                document_serializer = DocumentSerializer(data=document_data)
+                if not document_serializer.is_valid():
+                    return custom_response(document_serializer.errors, 400, "Validation failed.")
+            
+                document_data = document_serializer.save()
+
+            response = serializer.data
+            message = "Booking created successfully."
+        else:
+            response = serializer.errors
+            status = 400
+            message = "Validation failed."
+
+            
+
+
     
     
-    # Validate the data for documents
-    document_list = data.get('documents', [])
-    for document_data in document_list:
-        document_serializer = DocumentSerializer(data=document_data)
-        if not document_serializer.is_valid():
-            return custom_response(document_serializer.errors, 400, "Validation failed.")
-
-
-    
-    # Initialize the serializer with the data
-    serializer = BookingSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        response = serializer.data
-        message = "Booking created successfully."
-    else:
-        response = serializer.errors
-        status = 400
-        message = "Validation failed."
-
     return custom_response(response, status, message)
 
 
-def validate_data(serializer_class, data, custom_response):
-    """A helper function to validate data using a serializer."""
-    serializer = serializer_class(data=data)
-    if not serializer.is_valid():
-        response = serializer.errors
-        status = 400
-        message = "Validation failed."
-        return custom_response(response, status, message)
-    return serializer
 
 
 @api_view(['POST'])
@@ -124,7 +144,7 @@ def list_booking(request):
     paginated_bookings = paginator.paginate_queryset(bookings, request)
 
     if paginated_bookings:
-        serializer = BookingDetailSerializer(paginated_bookings, many=True)
+        serializer = BookingListSerializer(paginated_bookings, many=True)
         response = {
             'total_items': paginator.page.paginator.count,  # Total items available
             'total_pages': paginator.page.paginator.num_pages,  # Total pages

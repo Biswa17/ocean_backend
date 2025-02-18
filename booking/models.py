@@ -15,7 +15,7 @@ class Document(models.Model):
         ('special_handling_instructions', 'Special Handling Instructions'),
     ]
 
-    booking = models.ForeignKey('booking.Booking', on_delete=models.CASCADE, related_name='documents')
+    booking = models.ForeignKey('booking.Booking', on_delete=models.CASCADE, related_name='documents',null=True)
     document_type = models.CharField(max_length=50, choices=DOCUMENT_TYPE_CHOICES)
     document_url = models.CharField(max_length=500, null=True, blank=True)  # Stores the file URL instead of a file
     note = models.TextField(null=True, blank=True)  # Any remarks
