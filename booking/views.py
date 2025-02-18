@@ -2,17 +2,81 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from .models import Booking, Tracking
 from cargo.models import Cargo
-from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer,TrackingSerializer
+from .serializers import CargoSerializer, BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer
 from ocean_management_system.utils.response import custom_response, has_permission
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from ocean_management_system.decorators import user_filter_decorator
+from .serializers import PortValidationSerializer,ContainerValidationSerializer
+from cargo.serializers import ContainerSerializer
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_booking_full_info(request):
+    response = []
+    status = 200
+    message = ""
+
+    data = request.data.copy()  # Create a mutable copy of request data
+    user_id = request.user.id  # Assign the authenticated user's ID
+
+    # Validate port data
+    port_data = data.get('port')
+    port_serializer = validate_data(PortValidationSerializer, port_data, custom_response)
+    if isinstance(port_serializer, Response):
+        return port_serializer 
+
+    # Validate cargo data
+    cargo_data = data.get('cargo')
+    cargo_serializer = validate_data(CargoSerializer, cargo_data, custom_response)
+    if isinstance(cargo_serializer, Response):
+        return cargo_serializer  # Return early if cargo validation failed
+
+    # Validate container data (multiple containers)
+    container_list = data.get('containers')
+    for container_data in container_list:
+        containers = validate_data(ContainerValidationSerializer, container_data, custom_response)
+        if isinstance(containers, Response):
+            return containers
+    
+    
+    # Validate the data for documents
+    document_list = data.get('documents', [])
+    for document_data in document_list:
+        document_serializer = DocumentSerializer(data=document_data)
+        if not document_serializer.is_valid():
+            return custom_response(document_serializer.errors, 400, "Validation failed.")
+
+
+    
+    # Initialize the serializer with the data
+    serializer = BookingSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        response = serializer.data
+        message = "Booking created successfully."
+    else:
+        response = serializer.errors
+        status = 400
+        message = "Validation failed."
+
+    return custom_response(response, status, message)
+
+
+def validate_data(serializer_class, data, custom_response):
+    """A helper function to validate data using a serializer."""
+    serializer = serializer_class(data=data)
+    if not serializer.is_valid():
+        response = serializer.errors
+        status = 400
+        message = "Validation failed."
+        return custom_response(response, status, message)
+    return serializer
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_booking(request):
+def create_booking_with_id(request):
     response = []
     status = 200
     message = ""
