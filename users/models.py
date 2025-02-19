@@ -54,10 +54,14 @@ class CustomUserManager(BaseUserManager):
         return user
 
 class User(AbstractBaseUser):
-    username = models.CharField(max_length=100, unique=True)
+    username = models.CharField(max_length=100,)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(unique=True)  # Ensure email is unique
     phone_number = models.CharField(max_length=15, unique=True)  # Ensure phone number is unique
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    user_profile_image = models.CharField(max_length=500, null=True, blank=True)
+    user_position = models.CharField(max_length=255, null=True, blank=True)
     
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -68,8 +72,8 @@ class User(AbstractBaseUser):
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'username'  # The field used for authentication
-    REQUIRED_FIELDS = ['email', 'phone_number', 'organization']  # These are required when creating a user
+    USERNAME_FIELD = 'email'  # The field used for authentication
+    REQUIRED_FIELDS = ['username', 'phone_number', 'organization']  # These are required when creating a user
 
     def __str__(self):
         return self.username

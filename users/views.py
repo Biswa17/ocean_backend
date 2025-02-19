@@ -116,3 +116,50 @@ class UserDetailsView(APIView):
 
         # Return the standardized response using custom_response
         return custom_response(data=response, status=status, message=message)
+
+
+class UpdateUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        # Initialize response, status, and message
+        response = []
+        status = 200
+        message = ""
+
+        # Get the authenticated user
+        user = request.user
+        # Allowed fields that can be updated
+        allowed_fields = {"first_name", "last_name", "email", "phone_number", "user_profile_image"}
+
+        # Extract provided data
+        updated_data = request.data
+
+        # Extract existing data
+        serializer = UserSerializer(user)
+        existing_data = serializer.data
+
+        # Identify fields that actually need an update, excluding restricted fields
+        fields_to_update = {
+            key: updated_data[key]
+            for key in updated_data
+            if key in allowed_fields and str(existing_data.get(key)) != str(updated_data[key])
+        }
+
+        if not fields_to_update:
+            return custom_response(data=existing_data, status=200, message="No changes detected")
+
+        # Perform a partial update with only changed fields
+        serializer = UserSerializer(user, data=fields_to_update, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            response = serializer.data
+            message = "User details updated successfully"
+        else:
+            response = serializer.errors
+            status = 400
+            message = "Validation failed"
+
+        # Return the standardized response using custom_response
+        return custom_response(data=response, status=status, message=message)
