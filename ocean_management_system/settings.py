@@ -63,6 +63,8 @@ ALLOWED_HOSTS = ['172.31.91.157', '3.86.12.31', 'localhost', '127.0.0.1']
 
 APPEND_SLASH = False
 
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -74,7 +76,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     # Force JSON responses for errors
-    'ocean_management_system.middleware.JsonErrorMiddleware',
+    # 'ocean_management_system.middleware.JsonErrorMiddleware',
 ]
 
 ROOT_URLCONF = 'ocean_management_system.urls'
@@ -184,3 +186,5 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
+
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')

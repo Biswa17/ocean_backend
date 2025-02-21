@@ -1,12 +1,21 @@
 from rest_framework import serializers
 from .models import User, Organization
+from django.conf import settings
+
 
 class UserSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(queryset=Organization.objects.all())  # Use ID for organization
+    first_name = serializers.CharField(source="username")
+    user_profile_image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone_number', 'organization', 'is_active', 'is_admin']
+        fields = ['id', 'first_name','last_name', 'email', 'phone_number', 'organization','user_profile_image','user_position','is_active', 'is_admin']
+    
+    def get_user_profile_image(self, obj):
+        if obj.user_profile_image:
+            return f"{settings.BASE_URL}{obj.user_profile_image}"
+        return None
 
 class RegisterSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(
