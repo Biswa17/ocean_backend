@@ -52,17 +52,48 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port' , 'documents', 'tracking', 'shipping_route']
 
 class BookingListSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # Nested user details
-    cargo = CargoSerializer()  # Nested cargo details
+    customer = UserSerializer(source="user",fields=['id', 'first_name', 'last_name', 'email', 'phone_number', 'organization', 'organization_name'])  
 
-    from_port = PortSerializer(source="lane.from_port", read_only=True)  # Full Port object
-    to_port = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
+    package_details = serializers.SerializerMethodField()  # Nested cargo details
+    origin = PortSerializer(source="lane.from_port", read_only=True)  # Full Port object
+    destination = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
 
     tracking = TrackingSerializer()
+
+    order_created_at = serializers.SerializerMethodField()
+    status_updated_at = serializers.SerializerMethodField()
     
     class Meta:
         model = Booking
-        fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port', 'tracking', 'shipping_route']
+        fields = ['id', 'order_created_at', 'status', 'status_updated_at', 'total_price', 'customer', 'package_details', 'origin', 'destination', 'tracking', 'shipping_route']
+
+    def get_order_created_at(self, obj):
+        return obj.created_at.strftime("%d-%b-%Y %H:%M:%S") if obj.created_at else None
+
+    def get_status_updated_at(self, obj):
+        return obj.updated_at.strftime("%d-%b-%Y %H:%M:%S") if obj.updated_at else None
+
+    def get_package_details(self, obj):
+        """Custom package details instead of full Cargo object."""
+        cargo = obj.cargo  # Get cargo object
+        if not cargo:
+            return None
+        
+        # Calculate required values
+        total_boxes = sum(container.number_of_containers for container in cargo.containers.all())
+        total_weight = sum(container.number_of_containers * container.weight_per_container for container in cargo.containers.all())
+        
+        # You may need to calculate `volume_weight` and `CFT` based on your business logic
+        volume_weight = total_weight * 1.2  # Placeholder formula
+        cft = total_boxes * 10  # Placeholder formula
+
+        return {
+            "cargo_type": cargo.cargo_type,
+            "total_boxes": total_boxes,
+            "total_weight": round(total_weight, 2),
+            "volume_weight": round(volume_weight, 2),
+            "cft": round(cft, 2)
+        }
 
 
 

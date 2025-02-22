@@ -5,13 +5,29 @@ from django.conf import settings
 
 class UserSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(queryset=Organization.objects.all())  # Use ID for organization
+    organization_name = serializers.SerializerMethodField()
     first_name = serializers.CharField(source="username")
     user_profile_image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'first_name','last_name', 'email', 'phone_number', 'organization','user_profile_image','user_position','is_active', 'is_admin']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone_number', 'organization','organization_name', 'user_profile_image', 'user_position', 'is_active', 'is_admin']
+
+    def __init__(self, *args, **kwargs):
+        # Get 'fields' from context if provided, else return all fields
+        fields = kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
+
+        if fields is not None:
+            allowed = set(fields)
+            existing = set(self.fields.keys())
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
     
+    def get_organization_name(self, obj):
+        """Fetch and return organization name."""
+        return obj.organization.organization_name if obj.organization else None
+
     def get_user_profile_image(self, obj):
         if obj.user_profile_image:
             return f"{settings.BASE_URL}{obj.user_profile_image}"
