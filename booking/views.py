@@ -134,7 +134,7 @@ def list_booking(request):
     paginator = PageNumberPagination()
     paginator.page_size = per_page  # Set the page size dynamically
 
-    bookings = Booking.objects.all()
+    bookings = Booking.objects.all().order_by('-pk')
 
     # Apply user_id filter if provided
     if user_id:
