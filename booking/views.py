@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
-from .models import Booking, Tracking
-from cargo.models import Cargo
+from .models import Booking, Tracking, Document
+from cargo.models import Cargo,Container
 from ports.models import Lane
 from .serializers import  BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer, PortValidationSerializer,BookingListSerializer
 from ocean_management_system.utils.response import custom_response, has_permission
@@ -281,3 +281,32 @@ def get_tracking_details(request, id):
         message = f"Error: {str(e)}"
 
     return custom_response(response, status, message)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_dropdown_data(request):
+    response = []
+    status_code = 200
+    message = ""
+
+    try:
+        # Fetch dropdown data
+        cargo_types = dict(Cargo.CARGO_TYPE_CHOICES)
+        container_types = dict(Container.CONTAINER_TYPE_SIZE_CHOICES)
+        usage_options = dict(Container.USAGE_OPTIONS)
+        document_types = dict(Document.DOCUMENT_TYPE_CHOICES)
+
+        response = {
+            "cargo_types": cargo_types,
+            "container_types": container_types,
+            "usage_options": usage_options,
+            "document_types": document_types
+        }
+        message = "Dropdown data fetched successfully"
+
+    except Exception as e:
+        status_code = 500
+        message = f"Error: {str(e)}"
+
+    return custom_response(response, status_code, message)

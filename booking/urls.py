@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import create_booking_with_id, list_booking, booking_detail, update_booking,create_tracking,get_tracking_details,create_booking_full_info
+from .views import create_booking_with_id, list_booking, booking_detail, update_booking,create_tracking,get_tracking_details,create_booking_full_info,get_dropdown_data
 
 urlpatterns = [
     path('create-booking-old/', create_booking_with_id, name='create_booking'),
@@ -10,4 +10,7 @@ urlpatterns = [
 
     path('create-tracking/', create_tracking, name='create_tracking'),  # Create tracking
     path('get-tracking/<int:id>/', get_tracking_details, name='get_tracking_details'),  # Get tracking details
+
+
+    path('booking-dropdown-data/', get_dropdown_data, name='dropdown-data'),
 ]
