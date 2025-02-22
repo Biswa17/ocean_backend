@@ -6,6 +6,7 @@ class Port(models.Model):
     country = models.CharField(max_length=100)
     location = models.CharField(max_length=255, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
+    pincode = models.CharField(max_length=20, null=True, blank=True)
     state = models.CharField(max_length=100, null=True, blank=True)
     geo_code = models.CharField(max_length=100, null=True, blank=True)
     type = models.CharField(

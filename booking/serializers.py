@@ -4,8 +4,10 @@ from cargo.serializers import CargoSerializer,ContainerSerializer
 from users.serializers import UserSerializer  # Import from users app
 from ports.serializers import LaneSerializer  # Import from ports app
 from ports.serializers import PortSerializer  # Import PortSerializer
+from shipping.serializers import ShippingRoutesSerializer
 from ports.models import Port
 from cargo.models import Cargo,Container  # Adjust the import path to your Cargo model
+from django.utils.timezone import now
 
 
 
@@ -30,9 +32,22 @@ class BookingSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 class TrackingSerializer(serializers.ModelSerializer):
+    estimated_arrival = serializers.SerializerMethodField()
+
     class Meta:
         model = Tracking
         fields = ['id', 'status', 'location', 'estimated_arrival', 'remarks']
+
+    def get_estimated_arrival(self, obj):
+        """Return estimated arrival in 'X days' format, ensuring past dates return '0 days'."""
+        if not obj.estimated_arrival:
+            return None  # If no estimated arrival, return None
+        
+        today = now().date()
+        estimated_date = obj.estimated_arrival.date()
+        days_remaining = (estimated_date - today).days
+        
+        return f"{max(days_remaining, 0)} days"  # Ensures no negative values
 
 # Detailed serializer for list_booking API
 class BookingDetailSerializer(serializers.ModelSerializer):
@@ -55,8 +70,9 @@ class BookingListSerializer(serializers.ModelSerializer):
     customer = UserSerializer(source="user",fields=['id', 'first_name', 'last_name', 'email', 'phone_number', 'organization', 'organization_name'])  
 
     package_details = serializers.SerializerMethodField()  # Nested cargo details
-    origin = PortSerializer(source="lane.from_port", read_only=True)  # Full Port object
-    destination = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
+    origin = serializers.SerializerMethodField()
+    destination = serializers.SerializerMethodField()
+
 
     tracking = TrackingSerializer()
 
@@ -65,7 +81,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Booking
-        fields = ['id', 'order_created_at', 'status', 'status_updated_at', 'total_price', 'customer', 'package_details', 'origin', 'destination', 'tracking', 'shipping_route']
+        fields = ['id', 'order_created_at', 'status', 'status_updated_at', 'total_price', 'customer', 'package_details', 'origin', 'destination', 'tracking']
 
     def get_order_created_at(self, obj):
         return obj.created_at.strftime("%d-%b-%Y %H:%M:%S") if obj.created_at else None
@@ -94,6 +110,35 @@ class BookingListSerializer(serializers.ModelSerializer):
             "volume_weight": round(volume_weight, 2),
             "cft": round(cft, 2)
         }
+    
+    def get_origin(self, obj):
+        """Returns origin port with port_name, pincode, and departure_time."""
+        port = obj.lane.from_port if obj.lane else None  # Handle missing lane
+        shipping_route = obj.shipping_route if obj.shipping_route else None  # Handle missing shipping_route
+
+        if not port:
+            return None
+
+        return {
+            "port_name": port.port_name,
+            "pincode": getattr(port, "pincode", None),  # Handle missing pincode
+            "departure_time": shipping_route.departure_time.strftime("%d-%b-%Y %H:%M:%S") if shipping_route and shipping_route.departure_time else None
+        }
+
+    def get_destination(self, obj):
+        """Returns destination port with port_name, pincode, and formatted arrival_time."""
+        port = obj.lane.to_port if obj.lane else None  # Handle missing lane
+        shipping_route = obj.shipping_route if obj.shipping_route else None  # Handle missing shipping_route
+
+        if not port:
+            return None
+
+        return {
+            "port_name": port.port_name,
+            "pincode": getattr(port, "pincode", None),  # Handle missing pincode
+            "arrival_time": shipping_route.arrival_time.strftime("%d-%b-%Y %H:%M:%S") if shipping_route and shipping_route.arrival_time else None
+        }
+
 
 
 

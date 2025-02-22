@@ -4,7 +4,7 @@ from .models import Port,Lane
 class PortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Port
-        fields = ['id', 'port_name', 'location', 'country', 'city', 'state', 'code', 'geo_code', 'type']
+        fields = ['id', 'port_name', 'location','pincode' ,'country', 'city', 'state', 'code', 'geo_code', 'type']
 
 
 class LaneSerializer(serializers.ModelSerializer):

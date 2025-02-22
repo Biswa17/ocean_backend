@@ -49,17 +49,18 @@ class Command(BaseCommand):
 
     def populate_ports(self):
         ports_data = [
-            {"port_name": "Mumbai Port", "code": "INBOM", "country": "India", "city": "Mumbai", "state": "Maharashtra", "type": "sea port"},
-            {"port_name": "Chennai Port", "code": "INMAA", "country": "India", "city": "Chennai", "state": "Tamil Nadu", "type": "sea port"},
-            {"port_name": "Kolkata Port", "code": "INKOL", "country": "India", "city": "Kolkata", "state": "West Bengal", "type": "sea port"},
-            {"port_name": "Durban Port", "code": "ZADUR", "country": "South Africa", "city": "Durban", "state": "KwaZulu-Natal", "type": "sea port"},
-            {"port_name": "Cape Town Port", "code": "ZACTP", "country": "South Africa", "city": "Cape Town", "state": "Western Cape", "type": "sea port"},
-            {"port_name": "Lagos Port", "code": "NGLOS", "country": "Nigeria", "city": "Lagos", "state": "Lagos", "type": "sea port"},
-            {"port_name": "Mombasa Port", "code": "KENBO", "country": "Kenya", "city": "Mombasa", "state": "Coast", "type": "sea port"},
-            {"port_name": "Sydney Port", "code": "AUSYD", "country": "Australia", "city": "Sydney", "state": "New South Wales", "type": "sea port"},
-            {"port_name": "Melbourne Port", "code": "AUMEL", "country": "Australia", "city": "Melbourne", "state": "Victoria", "type": "sea port"},
-            {"port_name": "Perth Port", "code": "AUPER", "country": "Australia", "city": "Perth", "state": "Western Australia", "type": "sea port"}
+            {"port_name": "Mumbai Port", "code": "INBOM", "country": "India", "city": "Mumbai", "state": "Maharashtra", "pincode": "400001", "type": "sea port"},
+            {"port_name": "Chennai Port", "code": "INMAA", "country": "India", "city": "Chennai", "state": "Tamil Nadu", "pincode": "600001", "type": "sea port"},
+            {"port_name": "Kolkata Port", "code": "INKOL", "country": "India", "city": "Kolkata", "state": "West Bengal", "pincode": "700001", "type": "sea port"},
+            {"port_name": "Durban Port", "code": "ZADUR", "country": "South Africa", "city": "Durban", "state": "KwaZulu-Natal", "pincode": "4001", "type": "sea port"},
+            {"port_name": "Cape Town Port", "code": "ZACTP", "country": "South Africa", "city": "Cape Town", "state": "Western Cape", "pincode": "8001", "type": "sea port"},
+            {"port_name": "Lagos Port", "code": "NGLOS", "country": "Nigeria", "city": "Lagos", "state": "Lagos", "pincode": "100001", "type": "sea port"},
+            {"port_name": "Mombasa Port", "code": "KENBO", "country": "Kenya", "city": "Mombasa", "state": "Coast", "pincode": "80100", "type": "sea port"},
+            {"port_name": "Sydney Port", "code": "AUSYD", "country": "Australia", "city": "Sydney", "state": "New South Wales", "pincode": "2000", "type": "sea port"},
+            {"port_name": "Melbourne Port", "code": "AUMEL", "country": "Australia", "city": "Melbourne", "state": "Victoria", "pincode": "3000", "type": "sea port"},
+            {"port_name": "Perth Port", "code": "AUPER", "country": "Australia", "city": "Perth", "state": "Western Australia", "pincode": "6000", "type": "sea port"}
         ]
+
         for port in ports_data:
             Port.objects.get_or_create(**port)
         self.stdout.write(self.style.SUCCESS('Ports data populated successfully!'))
@@ -266,8 +267,8 @@ class Command(BaseCommand):
                 "route": route,
                 "ship": ship,
                 "pricing_model": "per_teu",
-                "departure_schedule": [departure_schedule.strftime("%Y-%m-%dT%H:%M:%SZ")],
-                "arrival_schedule": [arrival_schedule.strftime("%Y-%m-%dT%H:%M:%SZ")],
+                "departure_time": departure_schedule.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "arrival_time": arrival_schedule.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "liner_vessel_types": "Container Ships"
             }
 

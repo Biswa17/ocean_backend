@@ -15,4 +15,4 @@ class ShippingLinerSerializer(serializers.ModelSerializer):
 class ShippingRoutesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingRoutes
-        fields = ['id', 'route', 'ship', 'pricing_model', 'departure_schedule', 'arrival_schedule', 'liner_vessel_types']
+        fields = ['id', 'route', 'ship', 'pricing_model', 'departure_time', 'arrival_time', 'liner_vessel_types']

@@ -46,8 +46,8 @@ class ShippingRoutes(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     ship = models.ForeignKey(Ship, on_delete=models.CASCADE)  # Associate ship with a route
     pricing_model = models.CharField(max_length=100, choices=[('per_teu', 'Per TEU'), ('per_ton', 'Per Ton'), ('flat_rate', 'Flat Rate')])
-    departure_schedule = models.JSONField()  # Array of departure times
-    arrival_schedule = models.JSONField()  # Array of arrival times
+    departure_time = models.DateTimeField()  # Single departure datetime
+    arrival_time = models.DateTimeField()  # Single arrival datetime
     liner_vessel_types = models.CharField(max_length=255)
 
     created_at = models.DateTimeField(auto_now_add=True)
