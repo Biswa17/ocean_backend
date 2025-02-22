@@ -388,6 +388,7 @@ class Command(BaseCommand):
 
         # Create initial tracking entry with randomized location and remarks
         tracking = Tracking.objects.create(
+            booking=booking,
             status="in_transit",
             location=random.choice(possible_locations),  # Random initial location
             estimated_arrival=timezone.now() + timezone.timedelta(days=random.randint(3, 15)),  # Random ETA
