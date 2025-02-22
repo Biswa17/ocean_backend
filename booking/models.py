@@ -33,7 +33,7 @@ class Document(models.Model):
 
 class Booking(models.Model):
     STATUS_CHOICES = [
-        ('draft', 'Draft'), ('booked', 'Booked'), ('in_transit', 'In Transit'), ('complete', 'Complete'), ('cancelled', 'Cancelled')
+        ('draft', 'Draft'), ('booked', 'Booked'), ('in_transit', 'In Transit'), ('completed', 'Completed'), ('cancelled', 'Cancelled')
     ]
     
 
