@@ -310,9 +310,9 @@ class Command(BaseCommand):
 
         # Create a few more dummy users with the "Bata" organization
         dummy_users_data = [
-            {"username": "biswa", "email": "biswa@ximble", "phone_number": "1234567891", "password": "ximble"},
-            {"username": "anil", "email": "anil@ximble", "phone_number": "1234567892", "password": "ximble"},
-            {"username": "akash", "email": "akash@ximble", "phone_number": "1234567893", "password": "ximble"},
+            {"username": "biswa","last_name": "ximble", "email": "biswa@ximble", "phone_number": "1234567891", "password": "ximble"},
+            {"username": "anil", "last_name": "ximble","email": "anil@ximble", "phone_number": "1234567892", "password": "ximble"},
+            {"username": "akash", "last_name": "ximble","email": "akash@ximble", "phone_number": "1234567893", "password": "ximble"},
         ]
         for user_data in dummy_users_data:
             user = User.objects.create_user(
@@ -359,11 +359,13 @@ class Command(BaseCommand):
         shipping_route = random.choice(serviceable_routes)
         cargo = self.populate_cargo()
 
+        STATUS_CHOICES = ['booked', 'in_transit', 'complete', 'cancelled']
+
         booking = Booking.objects.create(
             user=user,
             lane=lane,
-            cargo = cargo,
-            status="in_transit",
+            cargo=cargo,
+            status=random.choice(STATUS_CHOICES),  # Random status selection
             shipping_route=shipping_route,
             total_price=random.uniform(5000, 50000)  # Random price between 5000 and 50000
         )

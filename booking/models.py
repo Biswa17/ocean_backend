@@ -32,6 +32,11 @@ class Document(models.Model):
 
 
 class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'), ('booked', 'Booked'), ('in_transit', 'In Transit'), ('complete', 'Complete'), ('cancelled', 'Cancelled')
+    ]
+    
+
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='bookings')  # Assuming users app exists
     cargo = models.ForeignKey('cargo.Cargo', on_delete=models.CASCADE, related_name='bookings',null=True, blank=True)
     shipping_route = models.ForeignKey('shipping.ShippingRoutes', on_delete=models.CASCADE, related_name='bookings', null=True, blank=True)
@@ -39,7 +44,7 @@ class Booking(models.Model):
     tracking = models.OneToOneField('Tracking', on_delete=models.SET_NULL, related_name='booking', null=True, blank=True)
 
 
-    status = models.CharField(max_length=50, choices=[('draft', 'Draft'),('pending', 'Pending'), ('confirmed', 'Confirmed'), ('shipped', 'Shipped'), ('delivered', 'Delivered')], default='draft')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

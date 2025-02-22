@@ -33,10 +33,14 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class TrackingSerializer(serializers.ModelSerializer):
     estimated_arrival = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Tracking
         fields = ['id', 'status', 'location', 'estimated_arrival', 'remarks']
+
+    def get_status(self, obj):
+        return obj.get_status_display()  # Returns the human-readable status
 
     def get_estimated_arrival(self, obj):
         """Return estimated arrival in 'X days' format, ensuring past dates return '0 days'."""
@@ -69,6 +73,8 @@ class BookingDetailSerializer(serializers.ModelSerializer):
 class BookingListSerializer(serializers.ModelSerializer):
     customer = UserSerializer(source="user",fields=['id', 'first_name', 'last_name', 'email', 'phone_number', 'organization', 'organization_name'])  
 
+    status = serializers.SerializerMethodField()
+
     package_details = serializers.SerializerMethodField()  # Nested cargo details
     origin = serializers.SerializerMethodField()
     destination = serializers.SerializerMethodField()
@@ -82,6 +88,9 @@ class BookingListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ['id', 'order_created_at', 'status', 'status_updated_at', 'total_price', 'customer', 'package_details', 'origin', 'destination', 'tracking']
+
+    def get_status(self, obj):
+        return obj.get_status_display()  # Returns the human-readable status
 
     def get_order_created_at(self, obj):
         return obj.created_at.strftime("%d-%b-%Y %H:%M:%S") if obj.created_at else None
