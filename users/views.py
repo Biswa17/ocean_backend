@@ -6,9 +6,10 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
-from .serializers import UserSerializer, RegisterSerializer
+from .serializers import UserSerializer, RegisterSerializer,ChangePasswordSerializer
 from .models import User, Organization
 from ocean_management_system.utils.response import custom_response
+from django.contrib.auth.hashers import check_password
 
 # Register view (using CreateAPIView)
 class RegisterView(APIView):
@@ -163,3 +164,38 @@ class UpdateUserView(APIView):
 
         # Return the standardized response using custom_response
         return custom_response(data=response, status=status, message=message)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Initialize response, status, and message
+        response = []
+        status_code = 200
+        message = ""
+
+        user = request.user
+        serializer = ChangePasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            old_password = serializer.validated_data.get("old_password")
+            new_password = serializer.validated_data.get("new_password")
+
+            # Verify old password
+            if not check_password(old_password, user.password):
+                return custom_response(data={}, status=400, message="Old password is incorrect")
+
+            # Update password
+            user.set_password(new_password)
+            user.save()
+
+            response = {"success": True}
+            message = "Password changed successfully"
+        else:
+            response = serializer.errors
+            status_code = 400
+            message = "Validation failed"
+
+        # Return the standardized response
+        return custom_response(data=response, status=status_code, message=message)
