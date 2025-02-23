@@ -361,7 +361,7 @@ class Command(BaseCommand):
         shipping_route = random.choice(serviceable_routes)
         cargo = self.populate_cargo()
 
-        STATUS_CHOICES = ['booked', 'in_transit', 'complete', 'cancelled']
+        STATUS_CHOICES = ['booked', 'in_transit', 'completed', 'cancelled']
 
         booking = Booking.objects.create(
             user=user,
