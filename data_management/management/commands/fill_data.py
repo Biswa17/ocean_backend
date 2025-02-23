@@ -264,11 +264,18 @@ class Command(BaseCommand):
             departure_schedule = datetime.utcnow()
             arrival_schedule = departure_schedule + timedelta(days=route.estimated_duration)
 
+            # Generate random price between 10,000 and 20,000
+            price = random.randint(10000, 20000)
+
+            # Generate a unique voyage number
+            voyage_number = f"VY-{random.randint(1000, 9999)}"
+
             # Create the route entry
             route_entry = {
                 "route": route,
                 "ship": ship,
-                "pricing_model": "per_teu",
+                "price": price,
+                "voyage_number": voyage_number,
                 "departure_time": departure_schedule.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "arrival_time": arrival_schedule.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "liner_vessel_types": "Container Ships"

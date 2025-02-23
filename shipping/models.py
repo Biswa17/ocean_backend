@@ -45,7 +45,8 @@ class ShippingLiner(models.Model):
 class ShippingRoutes(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     ship = models.ForeignKey(Ship, on_delete=models.CASCADE)  # Associate ship with a route
-    pricing_model = models.CharField(max_length=100, choices=[('per_teu', 'Per TEU'), ('per_ton', 'Per Ton'), ('flat_rate', 'Flat Rate')])
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Voyage price
+    voyage_number = models.CharField(max_length=50, unique=True)  # Unique voyage number
     departure_time = models.DateTimeField()  # Single departure datetime
     arrival_time = models.DateTimeField()  # Single arrival datetime
     liner_vessel_types = models.CharField(max_length=255)

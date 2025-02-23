@@ -4,9 +4,12 @@ from django.db import connection
 from django.http import JsonResponse
 from ports.models import Lane
 from routes.models import  Route
+from booking.models import Booking
 from shipping.models import ShippingRoutes, Ship, ShippingLiner
-from .serializers import ShipSerializer, ShippingLinerSerializer
+from .serializers import ShipSerializer, ShippingLinerSerializer,VoyageSerializer
 from ocean_management_system.utils.response import custom_response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 class ShipsByPortRoute(APIView):
     """
@@ -67,3 +70,34 @@ class ShipsByPortRoute(APIView):
             message = f"Error fetching data: {str(e)}"
 
         return custom_response(data=response, status=status_code, message=message)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_voyage_from_booking(request, booking_id):
+    try:
+        # Get booking object normally
+        booking = Booking.objects.filter(id=booking_id).first()
+        if not booking:
+            return custom_response({}, 404, "Booking not found")
+
+        # Get lane from booking
+        lane = booking.lane
+        if not lane:
+            return custom_response({}, 404, "Lane not found for this booking")
+
+        # Get routes related to this lane
+        routes = lane.routes.all()
+        if not routes:
+            return custom_response({}, 404, "No routes found for this lane")
+
+        # Get shipping routes related to these routes
+        shipping_routes = ShippingRoutes.objects.filter(route__in=routes)
+        if not shipping_routes.exists():
+            return custom_response({}, 404, "No shipping routes found for this booking")
+
+        # Serialize and return the response (passing lane in context)
+        serializer = VoyageSerializer(shipping_routes, many=True, context={"lane": lane})
+        return custom_response(serializer.data, 200, "Voyage details retrieved successfully")
+
+    except Exception as e:
+        return custom_response({}, 500, f"Error: {str(e)}")
