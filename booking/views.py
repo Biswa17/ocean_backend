@@ -310,3 +310,82 @@ def get_dropdown_data(request):
         message = f"Error: {str(e)}"
 
     return custom_response(response, status_code, message)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def add_document_to_booking(request, booking_id):
+    # Initialize response, status, and message
+    response, status_code, message = [], 200, ""
+
+    try:
+        # Validate request data
+        serializer = DocumentSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(booking_id=booking_id)
+            response = serializer.data
+            message = "Document added to booking successfully"
+            status_code = 201
+        else:
+            response = serializer.errors
+            status_code = 400
+            message = "Invalid data"
+
+    except Exception as e:
+        response = {}
+        status_code = 500
+        message = f"Error: {str(e)}"
+
+    return custom_response(response, status_code, message)
+
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def remove_document_from_booking(request, booking_id, document_id):
+    # Initialize response, status, and message
+    response, status_code, message = [], 200, ""
+
+    try:
+        # Fetch the document
+        document = Document.objects.filter(id=document_id, booking_id=booking_id).first()
+
+        if not document:
+            return custom_response({}, 404, "Document not found")
+
+        # Delete the document
+        document.delete()
+        message = "Document removed from booking successfully"
+
+    except Exception as e:
+        response = {}
+        status_code = 500
+        message = f"Error: {str(e)}"
+
+    return custom_response(response, status_code, message)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_documents_by_booking(request, booking_id):
+    # Initialize response, status, and message
+    response, status_code, message = [], 200, ""
+
+    try:
+        # Fetch all documents related to the given booking ID
+        documents = Document.objects.filter(booking_id=booking_id)
+
+        if not documents.exists():
+            return custom_response([], 404, "No documents found for this booking")
+
+        # Serialize the documents
+        response = DocumentSerializer(documents, many=True).data
+        message = "Documents retrieved successfully"
+
+    except Exception as e:
+        response = []
+        status_code = 500
+        message = f"Error: {str(e)}"
+
+    return custom_response(response, status_code, message)

@@ -10,6 +10,8 @@ from django.db import connection
 from datetime import datetime, timedelta
 import random
 from cargo.models import Cargo,Container
+import uuid
+
 
 class Command(BaseCommand):
     help = 'Fill all tables with dummy data'
@@ -398,6 +400,17 @@ class Command(BaseCommand):
 
         booking.tracking = tracking
         booking.save()
+
+        # Add at least two dummy documents
+        document_types = [doc[0] for doc in Document.DOCUMENT_TYPE_CHOICES]  # Extract type keys
+        for _ in range(2):  # Add at least 2 documents
+            document_type = random.choice(document_types)
+            document = Document.objects.create(
+                booking=booking,
+                document_type=document_type,
+                document_url=f"https://example.com/documents/{uuid.uuid4()}.pdf",  # Dummy URL
+                note="Auto-generated dummy document."
+            )
 
         self.stdout.write(self.style.SUCCESS(f"Booking {booking.id} created for user {user.username}"))
 
