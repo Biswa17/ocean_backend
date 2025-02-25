@@ -397,9 +397,12 @@ class Command(BaseCommand):
             "Preparing for departure."
         ]
 
+        # Get all possible status choices from the model
+        status_choices = [choice[0] for choice in Tracking.STATUS_CHOICES]
+
         # Create initial tracking entry with randomized location and remarks
         tracking = Tracking.objects.create(
-            status="in_transit",
+            status=random.choice(status_choices),
             location=random.choice(possible_locations),  # Random initial location
             estimated_arrival=timezone.now() + timezone.timedelta(days=random.randint(3, 15)),  # Random ETA
             remarks=random.choice(possible_remarks),  # Random remark

@@ -70,11 +70,13 @@ class Booking(models.Model):
     
 class Tracking(models.Model):
     STATUS_CHOICES = [
-        ('initiated', 'Initiated'),
-        ('in_transit', 'In Transit'),
-        ('arrived', 'Arrived'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled')
+        ('order_received', 'Order Received'),
+        ('order_preparing', 'Order Being Prepared'),
+        ('order_dispatched', 'Order Dispatched'),
+        ('in_transit', 'Order in Transit'),
+        ('arrived', 'Order Arrived'),
+        ('delivered', 'Order Delivered'),
+        ('cancelled', 'Order Cancelled')
     ]
 
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='initiated')
