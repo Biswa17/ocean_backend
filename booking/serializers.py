@@ -68,14 +68,15 @@ class BookingDetailSerializer(serializers.ModelSerializer):
 
     origin = serializers.SerializerMethodField()
     destination = serializers.SerializerMethodField()
-
+    price_owner = serializers.SerializerMethodField()
     voyage = VoyageSerializer(source="shipping_route")
+
 
     
     
     class Meta:
         model = Booking
-        fields = ['id', 'container_quantity', 'origin', 'destination' , 'commodity','container_type', 'container_weight', 'voyage']
+        fields = ['id', 'container_quantity', 'origin', 'destination' , 'commodity','container_type', 'container_weight','price_owner','voyage']
 
     def get_origin(self, obj):
         """Returns origin port with port_name, pincode, and departure_time."""
@@ -126,6 +127,9 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     def get_commodity(self, obj):
         """Assuming commodity information can be extracted from cargo description"""
         return obj.cargo.description if obj.cargo else "Unknown"
+    
+    def get_price_owner(self, obj):
+        return "Ximble"  # Hardcoded value
     
 
 class BookingListSerializer(serializers.ModelSerializer):
