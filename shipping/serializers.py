@@ -21,6 +21,7 @@ class ShippingRoutesSerializer(serializers.ModelSerializer):
 
 
 class VoyageSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
     departs = serializers.SerializerMethodField()
     departure_port_name = serializers.SerializerMethodField()
     arrives = serializers.SerializerMethodField()
@@ -34,6 +35,7 @@ class VoyageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingRoutes
         fields = [
+            'id',
             'departs',
             'departure_port_name',
             'arrives',

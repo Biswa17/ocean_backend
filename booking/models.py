@@ -46,6 +46,18 @@ class Booking(models.Model):
 
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+
+    # New fields
+    arrange_container_haulage = models.CharField(max_length=255, null=True, blank=True)  # String field
+    pickup_date = models.DateField(null=True, blank=True)
+    haulage_reference = models.CharField(max_length=255, null=True, blank=True)  # Optional field
+
+    stakeholders = models.CharField(max_length=255, null=True, blank=True)  # Email or Contact Info
+    customer_reference = models.CharField(max_length=255, null=True, blank=True)  # Optional field
+
+    optional_fields = models.JSONField(null=True, blank=True)  # Storing additional dynamic data
+
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -4,7 +4,7 @@ from cargo.serializers import CargoSerializer,ContainerSerializer
 from users.serializers import UserSerializer  # Import from users app
 from ports.serializers import LaneSerializer  # Import from ports app
 from ports.serializers import PortSerializer  # Import PortSerializer
-from shipping.serializers import ShippingRoutesSerializer
+from shipping.serializers import ShippingRoutesSerializer,VoyageSerializer
 from ports.models import Port
 from cargo.models import Cargo,Container  # Adjust the import path to your Cargo model
 from django.utils.timezone import now
@@ -24,7 +24,11 @@ class DocumentSerializer(serializers.ModelSerializer):
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'cargo','lane','shipping_route','tracking', 'status', 'total_price']
+        fields = [
+            'id', 'user', 'cargo', 'lane', 'shipping_route', 'tracking', 'status', 'total_price',
+            'arrange_container_haulage', 'pickup_date', 'haulage_reference',
+            'stakeholders', 'customer_reference', 'optional_fields'
+        ]
     
     def update(self, instance, validated_data):
         # Prevent user_id from being updated
@@ -55,20 +59,74 @@ class TrackingSerializer(serializers.ModelSerializer):
 
 # Detailed serializer for list_booking API
 class BookingDetailSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # Nested user details
-    cargo = CargoSerializer()  # Nested cargo details
+    
+    container_quantity = serializers.SerializerMethodField()
+    container_type = serializers.SerializerMethodField()
+    container_weight = serializers.SerializerMethodField()
+    commodity = serializers.SerializerMethodField()
 
-    from_port = PortSerializer(source="lane.from_port", read_only=True)  # Full Port object
-    to_port = PortSerializer(source="lane.to_port", read_only=True)  # Full Port object
 
-    tracking = TrackingSerializer()
-    documents = DocumentSerializer(many=True)
+    origin = serializers.SerializerMethodField()
+    destination = serializers.SerializerMethodField()
+
+    voyage = VoyageSerializer(source="shipping_route")
 
     
     
     class Meta:
         model = Booking
-        fields = ['id', 'status', 'total_price', 'user', 'cargo', 'from_port', 'to_port' , 'documents', 'tracking', 'shipping_route']
+        fields = ['id', 'container_quantity', 'origin', 'destination' , 'commodity','container_type', 'container_weight', 'voyage']
+
+    def get_origin(self, obj):
+        """Returns origin port with port_name, pincode, and departure_time."""
+        port = obj.lane.from_port if obj.lane else None  # Handle missing lane
+        shipping_route = obj.shipping_route if obj.shipping_route else None  # Handle missing shipping_route
+
+        if not port:
+            return None
+
+        return {
+            "port_name": port.port_name,
+            "pincode": getattr(port, "pincode", None),  # Handle missing pincode
+            "departure_time": shipping_route.departure_time.strftime("%d-%b-%Y %H:%M:%S") if shipping_route and shipping_route.departure_time else None
+        }
+
+    def get_destination(self, obj):
+        """Returns destination port with port_name, pincode, and formatted arrival_time."""
+        port = obj.lane.to_port if obj.lane else None  # Handle missing lane
+        shipping_route = obj.shipping_route if obj.shipping_route else None  # Handle missing shipping_route
+
+        if not port:
+            return None
+
+        return {
+            "port_name": port.port_name,
+            "pincode": getattr(port, "pincode", None),  # Handle missing pincode
+            "arrival_time": shipping_route.arrival_time.strftime("%d-%b-%Y %H:%M:%S") if shipping_route and shipping_route.arrival_time else None
+        }
+
+    def get_container_quantity(self, obj):
+        """Calculate total container quantity from cargo containers"""
+        if obj.cargo:
+            return sum(container.number_of_containers for container in obj.cargo.containers.all())
+        return 0
+
+    def get_container_type(self, obj):
+        """Extract container types from cargo containers"""
+        if obj.cargo:
+            return [container.container_type_size for container in obj.cargo.containers.all()]
+        return []
+
+    def get_container_weight(self, obj):
+        """Calculate total container weight"""
+        if obj.cargo:
+            return sum(container.weight_per_container * container.number_of_containers for container in obj.cargo.containers.all())
+        return 0
+
+    def get_commodity(self, obj):
+        """Assuming commodity information can be extracted from cargo description"""
+        return obj.cargo.description if obj.cargo else "Unknown"
+    
 
 class BookingListSerializer(serializers.ModelSerializer):
     customer = UserSerializer(source="user",fields=['id', 'first_name', 'last_name', 'email', 'phone_number', 'organization', 'organization_name'])  
