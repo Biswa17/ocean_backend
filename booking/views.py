@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from .models import Booking, Tracking, Document
 from cargo.models import Cargo,Container
 from ports.models import Lane
-from .serializers import  BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer, PortValidationSerializer,BookingListSerializer
+from .serializers import  BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer, PortValidationSerializer,BookingListSerializer,BookingTrackingDetailsSerializer
 from ocean_management_system.utils.response import custom_response, has_permission
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -271,8 +271,17 @@ def get_tracking_details(request, id):
             message = "Tracking details not found"
             return custom_response(response, status, message)
 
+        # Fetch the booking associated with this tracking ID
+        booking = Booking.objects.filter(tracking_id=id).first()
+        
+        if not booking:
+            message = "No booking found for this tracking ID"
+            return custom_response(response, status, message)
+
+        
+
         # Serialize and return data
-        serializer = TrackingSerializer(tracking)
+        serializer = BookingTrackingDetailsSerializer(booking)
         response = serializer.data
         message = "Tracking details retrieved successfully"
 

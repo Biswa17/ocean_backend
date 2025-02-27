@@ -37,24 +37,31 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class TrackingSerializer(serializers.ModelSerializer):
     estimated_arrival = serializers.SerializerMethodField()
+    estimated_days = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
         model = Tracking
-        fields = ['id', 'status', 'location', 'estimated_arrival', 'remarks']
+        fields = ['id', 'status', 'location', 'estimated_arrival','estimated_days', 'remarks']
 
     def get_status(self, obj):
         return obj.get_status_display()  # Returns the human-readable status
 
     def get_estimated_arrival(self, obj):
+        """Return estimated arrival date in '27 March 2025' format."""
+        if obj.estimated_arrival:
+            return obj.estimated_arrival.strftime('%d %B %Y')  # Example: 27 March 2025
+        return None  # If no estimated arrival, return None
+
+    def get_estimated_days(self, obj):
         """Return estimated arrival in 'X days' format, ensuring past dates return '0 days'."""
         if not obj.estimated_arrival:
             return None  # If no estimated arrival, return None
-        
+
         today = now().date()
         estimated_date = obj.estimated_arrival.date()
         days_remaining = (estimated_date - today).days
-        
+
         return f"{max(days_remaining, 0)} days"  # Ensures no negative values
 
 # Detailed serializer for list_booking API
@@ -250,3 +257,83 @@ class PortValidationSerializer(serializers.Serializer):
 
         return data
     
+
+class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
+    tracking = serializers.SerializerMethodField()
+    voyage = VoyageSerializer(source="shipping_route")
+
+    booking_info = serializers.SerializerMethodField()
+    additional_info = serializers.SerializerMethodField()
+    documents = serializers.SerializerMethodField()  # Fetch multiple related documents
+
+    class Meta:
+        model = Booking
+        fields = ['tracking','booking_info', 'voyage', 'additional_info', 'documents']
+
+    def get_booking_info(self, obj):
+        """Encapsulate booking details in booking_info JSON"""
+        origin = obj.lane.from_port if obj.lane else None
+        destination = obj.lane.to_port if obj.lane else None
+        shipping_route = obj.shipping_route if obj.shipping_route else None
+        cargo = obj.cargo
+
+        departure_time = shipping_route.departure_time if shipping_route and shipping_route.departure_time else None
+        arrival_time = shipping_route.arrival_time if shipping_route and shipping_route.arrival_time else None
+
+        formatted_dates = None
+        if departure_time and arrival_time:
+            formatted_dates = f"{departure_time.strftime('%d %b %Y')} - {arrival_time.strftime('%d %b %Y')}"
+
+        # Extract container details
+        container_data = []
+        if cargo and cargo.containers.exists():
+            for container in cargo.containers.all():
+                container_data.append({
+                    "Container Type": container.container_type_size,
+                    "Container Size": container.container_type_size,
+                    "Weight": container.weight_per_container,
+                    "Shipper Container": "Not Available",
+                    "Import Return": "Not Available"
+                })
+
+        return {
+            "From": origin.port_name if origin else None,
+            "To": destination.port_name if destination else None,
+            "Product Type": cargo.cargo_type if cargo else None,
+            "Temperature Controlled Cargo": cargo.is_temperature_controlled if cargo else False,
+            "Dangerous Good Cargo": cargo.is_dangerous if cargo else False,
+            "DG Class": getattr(cargo, 'dg_class', None),
+            "Hazardous Level": getattr(cargo, 'hazardous_level', None),
+            "Dates": formatted_dates,
+            "Price Owner": "Ximble",
+            "Containers": container_data  # Added container data here
+        }
+
+    def get_documents(self, obj):
+        """Fetch multiple documents where document.booking_id = booking.id"""
+        documents = Document.objects.filter(booking_id=obj.id)  # Get all related documents
+        return DocumentSerializer(documents, many=True).data  # Serialize multiple documents
+
+    def get_additional_info(self, obj):
+        """Encapsulate only required additional details related to booking"""
+        return {
+            "Schedule Collection": obj.pickup_date.strftime('%d %b %Y') if obj.pickup_date else "Not Available",
+            "Stakeholder": obj.stakeholders if obj.stakeholders else "Not Available",
+            "Service": obj.haulage_reference if obj.haulage_reference else "Not Available",
+            "Cost Per Customer": obj.customer_reference if obj.customer_reference else "Not Available"
+        }
+
+    def get_tracking(self, obj):
+        """Modify tracking info to include total container weight"""
+        tracking_data = TrackingSerializer(obj.tracking).data if obj.tracking else {}
+
+        # Calculate total container weight
+        total_weight = 0
+        if obj.cargo and obj.cargo.containers.exists():
+            for container in obj.cargo.containers.all():
+                total_weight += container.weight_per_container * container.number_of_containers
+
+        # Append total weight to tracking info
+        tracking_data["Total Container Weight"] = total_weight
+
+        return tracking_data
