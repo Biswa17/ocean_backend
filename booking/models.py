@@ -49,15 +49,15 @@ class Booking(models.Model):
 
 
     # New fields
-    arrange_container_haulage = models.CharField(max_length=255, null=True, blank=True)  # String field
+    arrange_container_haulage = models.ForeignKey('ArrangeContainerYardHaulage', on_delete=models.SET_NULL, null=True, blank=True)
     pickup_date = models.DateField(null=True, blank=True)
     haulage_reference = models.CharField(max_length=255, null=True, blank=True)  # Optional field
 
-    stakeholders = models.CharField(max_length=255, null=True, blank=True)  # Email or Contact Info
+    stakeholders = models.JSONField(null=True, blank=True)
     customer_reference = models.CharField(max_length=255, null=True, blank=True)  # Optional field
 
-    optional_fields = models.JSONField(null=True, blank=True)  # Storing additional dynamic data
-
+    # Many-to-Many relationship for OptionalFields
+    optional_fields = models.ManyToManyField("OptionalFields", blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -93,4 +93,30 @@ class Tracking(models.Model):
 
     def __str__(self):
         return f"Tracking {self.id} - {self.status}"
+
+
+class ArrangeContainerYardHaulage(models.Model):
+    name = models.CharField(max_length=255)  # e.g., "K.R.C Container depot"
+    address = models.TextField()  # e.g., "96 Moo5, Tungsukhla, Sriracha, Chonburi 96 96"
+    city = models.CharField(max_length=255)  # e.g., "Leam Chabang"
+    country = models.CharField(max_length=255)  # e.g., "Thailand"
+    postal_code = models.CharField(max_length=20)  # e.g., "20230"
+
+    class Meta:
+        db_table = "arrange_container_yard_haulage"
+
+    def __str__(self):
+        return f"{self.name} - {self.city}, {self.country}"
+
+
+class OptionalFields(models.Model):
+    service = models.CharField(max_length=255)  # Mandatory field for service name
+    cost_per_container = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Optional cost
+    description = models.TextField(null=True, blank=True)  # Optional description
+
+    class Meta:
+        db_table = "optional_fields"
+
+    def __str__(self):
+        return f"{self.service} - Cost: {self.cost_per_container or 'N/A'}"
 

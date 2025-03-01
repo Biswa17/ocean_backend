@@ -3,7 +3,7 @@ from ports.models import Port, Lane
 from routes.models import Route,RouteLanes
 from shipping.models import Ship, ShippingLiner, ShippingRoutes
 from users.models import Organization, User
-from booking.models import Booking,Tracking,Document
+from booking.models import Booking,Tracking,Document,OptionalFields, ArrangeContainerYardHaulage
 from django.utils import timezone
 import random
 from django.db import connection
@@ -27,6 +27,8 @@ class Command(BaseCommand):
         self.populate_ships()
         self.populate_shipping_routes()
         self.create_booking()
+        self.populate_arrange_container_yard_haulage()
+        self.populate_optional_fields()
         self.stdout.write(self.style.SUCCESS('All tables populated with dummy data!'))
     
     def truncate_tables(self):
@@ -45,6 +47,8 @@ class Command(BaseCommand):
             cursor.execute("TRUNCATE TABLE tracking RESTART IDENTITY CASCADE;")
             cursor.execute("TRUNCATE TABLE cargo RESTART IDENTITY CASCADE;")
             cursor.execute("TRUNCATE TABLE container RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE optional_fields RESTART IDENTITY CASCADE;")
+            cursor.execute("TRUNCATE TABLE arrange_container_yard_haulage RESTART IDENTITY CASCADE;")
 
 
         self.stdout.write(self.style.WARNING('All tables truncated successfully!'))
@@ -467,3 +471,31 @@ class Command(BaseCommand):
             )
 
         return cargo
+
+    def populate_arrange_container_yard_haulage(self):
+        haulage_data = [
+            {"name": "K.R.C Container Depot", "address": "96 Moo5, Tungsukhla, Sriracha, Chonburi 96 96", "city": "Leam Chabang", "country": "Thailand", "postal_code": "20230"},
+            {"name": "Tanjung Priok Container Yard", "address": "Jl. Pelabuhan No.88, Jakarta", "city": "Tanjung Priok", "country": "Indonesia", "postal_code": "14310"},
+            {"name": "Colombo Terminal Yard", "address": "Terminal 3, Port of Colombo", "city": "Colombo Port", "country": "Sri Lanka", "postal_code": "01500"},
+        ]
+
+        for data in haulage_data:
+            ArrangeContainerYardHaulage.objects.get_or_create(**data)
+        
+        self.stdout.write(self.style.SUCCESS('ArrangeContainerYardHaulage data populated successfully!'))
+
+    
+    def populate_optional_fields(self):
+        optional_fields_data = [
+            {"service": "Customs Clearance", "cost_per_container": 150.0, "description": "Handling customs paperwork and clearance processes."},
+            {"service": "Port Handling", "cost_per_container": 100.0, "description": "Charges for loading/unloading at the port."},
+            {"service": "Container Inspection", "cost_per_container": 80.0, "description": "Detailed inspection of the container before shipping."},
+            {"service": "Refrigerated Storage", "cost_per_container": 200.0, "description": "Cold storage for perishable cargo."},
+            {"service": "Cargo Insurance", "cost_per_container": 50.0, "description": "Insurance coverage for transported goods."},
+        ]
+
+        for data in optional_fields_data:
+            OptionalFields.objects.get_or_create(**data)
+        
+        self.stdout.write(self.style.SUCCESS('OptionalFields data populated successfully!'))
+

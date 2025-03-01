@@ -8,7 +8,7 @@ from shipping.serializers import ShippingRoutesSerializer,VoyageSerializer
 from ports.models import Port
 from cargo.models import Cargo,Container  # Adjust the import path to your Cargo model
 from django.utils.timezone import now
-
+from .models import OptionalFields, ArrangeContainerYardHaulage
 
 
 class DocumentSerializer(serializers.ModelSerializer):
@@ -22,6 +22,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
+    optional_fields = serializers.PrimaryKeyRelatedField(
+        queryset=OptionalFields.objects.all(), many=True, required=False
+    )
+    stakeholders = serializers.ListField(
+        child=serializers.EmailField(), required=False
+    )
+
     class Meta:
         model = Booking
         fields = [
@@ -29,11 +36,24 @@ class BookingSerializer(serializers.ModelSerializer):
             'arrange_container_haulage', 'pickup_date', 'haulage_reference',
             'stakeholders', 'customer_reference', 'optional_fields'
         ]
-    
+
     def update(self, instance, validated_data):
-        # Prevent user_id from being updated
-        validated_data.pop('user', None)  # Remove user field if it's in the request
-        return super().update(instance, validated_data)
+        validated_data.pop('user', None)  # Prevent updating user
+        optional_fields_data = validated_data.pop('optional_fields', None)
+        stakeholders_data = validated_data.pop('stakeholders', None)
+
+        instance = super().update(instance, validated_data)  # Update main fields
+
+        if optional_fields_data is not None:
+            instance.optional_fields.set(optional_fields_data)  # Update Many-to-Many field
+        
+        if stakeholders_data is not None:
+            instance.stakeholders = stakeholders_data  # Update JSON field
+        
+        instance.save()
+        return instance
+
+
 
 class TrackingSerializer(serializers.ModelSerializer):
     estimated_arrival = serializers.SerializerMethodField()
@@ -337,3 +357,14 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
         tracking_data["Total Container Weight"] = total_weight
 
         return tracking_data
+
+
+class OptionalFieldsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OptionalFields
+        fields = "__all__"  # Includes id, service, cost_per_container, description
+
+class ArrangeContainerYardHaulageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArrangeContainerYardHaulage
+        fields = "__all__"  # Includes id, name, address, city, country, postal_code

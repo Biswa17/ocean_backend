@@ -1,9 +1,9 @@
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
-from .models import Booking, Tracking, Document
+from .models import Booking, Tracking, Document,OptionalFields, ArrangeContainerYardHaulage
 from cargo.models import Cargo,Container
 from ports.models import Lane
-from .serializers import  BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer, PortValidationSerializer,BookingListSerializer,BookingTrackingDetailsSerializer
+from .serializers import  BookingSerializer,BookingDetailSerializer,TrackingSerializer,DocumentSerializer, PortValidationSerializer,BookingListSerializer,BookingTrackingDetailsSerializer,OptionalFieldsSerializer, ArrangeContainerYardHaulageSerializer
 from ocean_management_system.utils.response import custom_response, has_permission
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -160,7 +160,7 @@ def list_booking(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def booking_detail(request, id):
+def booking_detail_confirmation(request, id):
     response = []
     status = 200
     message = ""
@@ -394,6 +394,29 @@ def get_documents_by_booking(request, booking_id):
 
     except Exception as e:
         response = []
+        status_code = 500
+        message = f"Error: {str(e)}"
+
+    return custom_response(response, status_code, message)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_optional_and_haulage_data(request):
+    response = {"optional_fields": [], "container_yard_haulage": []}
+    status_code = 200
+    message = "Data fetched successfully"
+
+    try:
+        # Fetch and serialize OptionalFields
+        optional_fields = OptionalFields.objects.all()
+        response["optional_fields"] = OptionalFieldsSerializer(optional_fields, many=True).data
+
+        # Fetch and serialize ArrangeContainerYardHaulage
+        haulage_data = ArrangeContainerYardHaulage.objects.all()
+        response["container_yard_haulage"] = ArrangeContainerYardHaulageSerializer(haulage_data, many=True).data
+
+    except Exception as e:
         status_code = 500
         message = f"Error: {str(e)}"
 
