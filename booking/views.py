@@ -32,11 +32,11 @@ def create_booking_full_info(request):
         # Get lane information from ports
         from_port_id = port_data.get('from_port_id')
         to_port_id = port_data.get('to_port_id')
-        try:
-            lane = Lane.objects.get(from_port_id=from_port_id, to_port_id=to_port_id)  # Assuming Lane model exists
+
+        lane = Lane.objects.filter(from_port_id=from_port_id, to_port_id=to_port_id).first()
+        if lane:
             data['lane'] = lane.id  # Adding lane ID to the booking data
-        except Lane.DoesNotExist:
-            return custom_response({"detail": "Invalid lane between the provided ports."}, 400, "Lane not found.")
+
 
 
         # Validate cargo data

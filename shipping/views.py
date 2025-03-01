@@ -78,26 +78,26 @@ def get_voyage_from_booking(request, booking_id):
         # Get booking object normally
         booking = Booking.objects.filter(id=booking_id).first()
         if not booking:
-            return custom_response({}, 404, "Booking not found")
+            return custom_response([], 404, "Booking not found")
 
         # Get lane from booking
         lane = booking.lane
         if not lane:
-            return custom_response({}, 404, "Lane not found for this booking")
+            return custom_response([], 200, "No voyage avaible. Try different ports.")
 
         # Get routes related to this lane
         routes = lane.routes.all()
         if not routes:
-            return custom_response({}, 404, "No routes found for this lane")
+            return custom_response([], 200, "No voyage available. Try different ports.")
 
         # Get shipping routes related to these routes
         shipping_routes = ShippingRoutes.objects.filter(route__in=routes)
         if not shipping_routes.exists():
-            return custom_response({}, 404, "No shipping routes found for this booking")
+            return custom_response([], 200, "No voyage available. Try different ports.")
 
         # Serialize and return the response (passing lane in context)
         serializer = VoyageSerializer(shipping_routes, many=True, context={"lane": lane})
         return custom_response(serializer.data, 200, "Voyage details retrieved successfully")
 
     except Exception as e:
-        return custom_response({}, 500, f"Error: {str(e)}")
+        return custom_response([], 500, f"Error: {str(e)}")
