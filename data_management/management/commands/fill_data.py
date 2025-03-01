@@ -433,29 +433,34 @@ class Command(BaseCommand):
     def populate_cargo(self):
         """Creates one random cargo and adds two random containers to it."""
 
-        # Define possible cargo types
-        CARGO_TYPES = ['fabrics', 'electronics', 'machinery', 'general', 'hazardous', 'refrigerated']
-        IS_TEMPERATURE_CONTROLLED = [True, False]
-        IS_DANGEROUS = [True, False]
+        # Get choices dynamically from Cargo model enums
+        CARGO_TYPES = [choice[0] for choice in Cargo.CARGO_TYPE_CHOICES]
+        TEMPERATURE_RANGES = [choice[0] for choice in Cargo.TEMPERATURE_RANGE_CHOICES]
+        DG_CLASSES = [choice[0] for choice in Cargo.DG_CLASS_CHOICES]
+        HAZARDOUS_LEVELS = [choice[0] for choice in Cargo.HAZARDOUS_LEVEL_CHOICES]
 
-        # Define possible container types
-        CONTAINER_TYPES = [
-            '20ft_standard', '40ft_standard', '20ft_reefer', '40ft_reefer',
-            'flat_rack', 'open_top', 'tank', 'custom'
-        ]
-        USAGE_OPTIONS = [
-            ['shipper_container'], 
-            ['import_return'], 
-            ['oversized'], 
-            ['shipper_container', 'import_return'], 
-            ['shipper_container', 'oversized']
-        ]
+        CONTAINER_TYPES = [choice[0] for choice in Container.CONTAINER_TYPE_SIZE_CHOICES]
+        USAGE_OPTIONS = [[choice[0]] for choice in Container.USAGE_OPTIONS]
+
+        # Randomly determine if cargo is temperature-controlled and/or dangerous
+        is_temp_controlled = random.choice([True, False])
+        is_dangerous = random.choice([True, False])
+
+        # Assign temperature range only if temperature-controlled
+        temperature_range = random.choice(TEMPERATURE_RANGES) if is_temp_controlled else None
+
+        # Assign DG class & hazardous level only if dangerous
+        dg_class = random.choice(DG_CLASSES) if is_dangerous else None
+        hazardous_level = random.choice(HAZARDOUS_LEVELS) if is_dangerous else None
 
         # Create a random cargo
         cargo = Cargo.objects.create(
             cargo_type=random.choice(CARGO_TYPES),
-            is_temperature_controlled=random.choice(IS_TEMPERATURE_CONTROLLED),
-            is_dangerous=random.choice(IS_DANGEROUS),
+            temperature_controlled=is_temp_controlled,
+            dangerous_goods=is_dangerous,
+            temperature_range=temperature_range,
+            dg_class=dg_class,
+            hazardous_level=hazardous_level,
             description=f"Random description {random.randint(100, 999)}",
             earliest_departure_date=None  # Can be set dynamically if needed
         )
@@ -470,7 +475,8 @@ class Command(BaseCommand):
                 container_usage_options=random.choice(USAGE_OPTIONS)
             )
 
-        return cargo
+        return cargo  # Return the created cargo object
+
 
     def populate_arrange_container_yard_haulage(self):
         haulage_data = [
