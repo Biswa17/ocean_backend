@@ -348,7 +348,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"User {username} does not exist. Skipping..."))
                 continue  # Skip to the next user if not found
 
-            for _ in range(5):  # Create 5 bookings per user
+            for _ in range(10):  # Create 5 bookings per user
                 self.create_booking_for_user(user)
 
             self.stdout.write(self.style.SUCCESS(f"Successfully created 5 bookings for {username}."))
