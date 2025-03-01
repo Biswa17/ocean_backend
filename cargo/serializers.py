@@ -15,9 +15,14 @@ class ContainerPartialValidationSerializer(serializers.Serializer):
 
 
 class CargoSerializer(serializers.ModelSerializer):
-    containers = ContainerSerializer(many=True, read_only=True)  # Now, ContainerSerializer is defined before use
+    containers = ContainerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Cargo
-        fields = ['id', 'cargo_type', 'is_temperature_controlled', 'is_dangerous', 'description', 'earliest_departure_date', 'containers']
+        fields = [
+            'id', 'cargo_type', 'temperature_controlled', 'dangerous_goods', 
+            'temperature_range', 'dg_class', 'hazardous_level', 
+            'description', 'earliest_departure_date', 'containers'
+        ]
         read_only_fields = ['id']
+

@@ -305,12 +305,18 @@ def get_dropdown_data(request):
         container_types = dict(Container.CONTAINER_TYPE_SIZE_CHOICES)
         usage_options = dict(Container.USAGE_OPTIONS)
         document_types = dict(Document.DOCUMENT_TYPE_CHOICES)
+        temperature_ranges = dict(Cargo.TEMPERATURE_RANGE_CHOICES)
+        dg_classes = dict(Cargo.DG_CLASS_CHOICES)
+        hazardous_levels = dict(Cargo.HAZARDOUS_LEVEL_CHOICES)
 
         response = {
             "cargo_types": cargo_types,
             "container_types": container_types,
             "usage_options": usage_options,
-            "document_types": document_types
+            "document_types": document_types,
+            "temperature_ranges": temperature_ranges,
+            "dg_classes": dg_classes,
+            "hazardous_levels": hazardous_levels
         }
         message = "Dropdown data fetched successfully"
 
@@ -319,6 +325,7 @@ def get_dropdown_data(request):
         message = f"Error: {str(e)}"
 
     return custom_response(response, status_code, message)
+
 
 
 @api_view(['PUT'])

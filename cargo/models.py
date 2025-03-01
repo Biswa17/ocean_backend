@@ -11,9 +11,39 @@ class Cargo(models.Model):
         ('refrigerated', 'Refrigerated Goods'),
     ]
 
+    TEMPERATURE_RANGE_CHOICES = [
+        ('cold', 'Cold (-20°C to 0°C)'),
+        ('cool', 'Cool (0°C to 8°C)'),
+        ('ambient', 'Ambient (15°C to 25°C)'),
+        ('hot', 'Hot (Above 25°C)')
+    ]
+
+    DG_CLASS_CHOICES = [
+        ('class_1', 'Explosives'),
+        ('class_2', 'Gases'),
+        ('class_3', 'Flammable Liquids'),
+        ('class_4', 'Flammable Solids'),
+        ('class_5', 'Oxidizing Substances'),
+        ('class_6', 'Toxic & Infectious Substances'),
+        ('class_7', 'Radioactive Materials'),
+        ('class_8', 'Corrosives'),
+        ('class_9', 'Miscellaneous Dangerous Goods')
+    ]
+
+    HAZARDOUS_LEVEL_CHOICES = [
+        ('low', 'Low Risk'),
+        ('medium', 'Medium Risk'),
+        ('high', 'High Risk'),
+        ('critical', 'Critical Risk')
+    ]
+
     cargo_type = models.CharField(max_length=50, choices=CARGO_TYPE_CHOICES)
-    is_temperature_controlled = models.BooleanField(default=False)
-    is_dangerous = models.BooleanField(default=False)
+    temperature_controlled = models.BooleanField(default=False)
+    dangerous_goods = models.BooleanField(default=False)
+
+    temperature_range = models.CharField(max_length=20, choices=TEMPERATURE_RANGE_CHOICES, null=True, blank=True)
+    dg_class = models.CharField(max_length=20, choices=DG_CLASS_CHOICES, null=True, blank=True)
+    hazardous_level = models.CharField(max_length=20, choices=HAZARDOUS_LEVEL_CHOICES, null=True, blank=True)
 
     description = models.TextField(null=True, blank=True)
     earliest_departure_date = models.DateField(null=True, blank=True)  # New Field
