@@ -319,12 +319,13 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
         return {
             "from": origin.port_name if origin else None,
             "to": destination.port_name if destination else None,
-            "product_type": cargo.cargo_type if cargo else None,
+            "product_type": cargo.get_cargo_type_display() if cargo else None,
             "temperature_controlled_cargo": bool(cargo.temperature_controlled) if cargo else False,
-            "temperature_range": cargo.temperature_range if cargo else None,
+            "temperature_range": cargo.get_temperature_range_display() if cargo and hasattr(cargo, 'get_temperature_range_display') else cargo.temperature_range if cargo else None,  # Human-readable format
             "dangerous_good_cargo": bool(cargo.dangerous_goods) if cargo else False,
-            "dg_class": cargo.dg_class if cargo else None,
-            "hazardous_level": cargo.hazardous_level if cargo else None,
+            "dg_class": cargo.get_dg_class_display() if cargo and hasattr(cargo, 'get_dg_class_display') else cargo.dg_class if cargo else None,  # Human-readable format
+            "hazardous_level": cargo.get_hazardous_level_display() if cargo and hasattr(cargo, 'get_hazardous_level_display') else cargo.hazardous_level if cargo else None,  # Human-readable format
+        "dates": formatted_dates,
             "dates": formatted_dates,
             "price_owner": "Ximble",
             "containers": container_data  # Added container data here
@@ -355,7 +356,7 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
                 total_weight += container.weight_per_container * container.number_of_containers
 
         # Append total weight to tracking info
-        tracking_data["total_container_weight"] = total_weight
+        tracking_data["total_container_weight"] = round(total_weight, 2)
 
         # Add origin details
         port = obj.lane.from_port if obj.lane else None
