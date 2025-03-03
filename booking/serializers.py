@@ -309,21 +309,22 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
         if cargo and cargo.containers.exists():
             for container in cargo.containers.all():
                 container_data.append({
-                    "Container Type": container.container_type_size,
-                    "Container Size": container.container_type_size,
+                    "Container Type & Size": container.container_type_size,
                     "Weight": container.weight_per_container,
-                    "Shipper Container": "Not Available",
-                    "Import Return": "Not Available"
+                    "Shipper Container": 'shipper_container' in container.container_usage_options if container.container_usage_options else False,
+                    "Import Return": 'import_return' in container.container_usage_options if container.container_usage_options else False,
+                    "Oversized": 'oversized' in container.container_usage_options if container.container_usage_options else False,
                 })
 
         return {
             "From": origin.port_name if origin else None,
             "To": destination.port_name if destination else None,
             "Product Type": cargo.cargo_type if cargo else None,
-            "Temperature Controlled Cargo": cargo.is_temperature_controlled if cargo else False,
-            "Dangerous Good Cargo": cargo.is_dangerous if cargo else False,
-            "DG Class": getattr(cargo, 'dg_class', None),
-            "Hazardous Level": getattr(cargo, 'hazardous_level', None),
+            "Temperature Controlled Cargo": bool(cargo.temperature_controlled) if cargo else False,
+            "Temperature Range": cargo.temperature_range if cargo else None,
+            "Dangerous Good Cargo": bool(cargo.dangerous_goods) if cargo else False,
+            "DG Class": cargo.dg_class if cargo else None,
+            "Hazardous Level": cargo.hazardous_level if cargo else None,
             "Dates": formatted_dates,
             "Price Owner": "Ximble",
             "Containers": container_data  # Added container data here
