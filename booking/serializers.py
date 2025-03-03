@@ -288,7 +288,7 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ['tracking','booking_info', 'voyage', 'additional_info', 'documents']
+        fields = ['tracking', 'booking_info', 'voyage', 'additional_info', 'documents']
 
     def get_booking_info(self, obj):
         """Encapsulate booking details in booking_info JSON"""
@@ -309,25 +309,25 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
         if cargo and cargo.containers.exists():
             for container in cargo.containers.all():
                 container_data.append({
-                    "Container Type & Size": container.container_type_size,
-                    "Weight": container.weight_per_container,
-                    "Shipper Container": 'shipper_container' in container.container_usage_options if container.container_usage_options else False,
-                    "Import Return": 'import_return' in container.container_usage_options if container.container_usage_options else False,
-                    "Oversized": 'oversized' in container.container_usage_options if container.container_usage_options else False,
+                    "container_type_size": container.container_type_size,
+                    "weight": container.weight_per_container,
+                    "shipper_container": 'shipper_container' in container.container_usage_options if container.container_usage_options else False,
+                    "import_return": 'import_return' in container.container_usage_options if container.container_usage_options else False,
+                    "oversized": 'oversized' in container.container_usage_options if container.container_usage_options else False,
                 })
 
         return {
-            "From": origin.port_name if origin else None,
-            "To": destination.port_name if destination else None,
-            "Product Type": cargo.cargo_type if cargo else None,
-            "Temperature Controlled Cargo": bool(cargo.temperature_controlled) if cargo else False,
-            "Temperature Range": cargo.temperature_range if cargo else None,
-            "Dangerous Good Cargo": bool(cargo.dangerous_goods) if cargo else False,
-            "DG Class": cargo.dg_class if cargo else None,
-            "Hazardous Level": cargo.hazardous_level if cargo else None,
-            "Dates": formatted_dates,
-            "Price Owner": "Ximble",
-            "Containers": container_data  # Added container data here
+            "from": origin.port_name if origin else None,
+            "to": destination.port_name if destination else None,
+            "product_type": cargo.cargo_type if cargo else None,
+            "temperature_controlled_cargo": bool(cargo.temperature_controlled) if cargo else False,
+            "temperature_range": cargo.temperature_range if cargo else None,
+            "dangerous_good_cargo": bool(cargo.dangerous_goods) if cargo else False,
+            "dg_class": cargo.dg_class if cargo else None,
+            "hazardous_level": cargo.hazardous_level if cargo else None,
+            "dates": formatted_dates,
+            "price_owner": "Ximble",
+            "containers": container_data  # Added container data here
         }
 
     def get_documents(self, obj):
@@ -338,14 +338,14 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
     def get_additional_info(self, obj):
         """Encapsulate only required additional details related to booking"""
         return {
-            "Schedule Collection": obj.pickup_date.strftime('%d %b %Y') if obj.pickup_date else "Not Available",
-            "Stakeholder": obj.stakeholders if obj.stakeholders else "Not Available",
-            "Service": obj.haulage_reference if obj.haulage_reference else "Not Available",
-            "Cost Per Customer": obj.customer_reference if obj.customer_reference else "Not Available"
+            "schedule_collection": obj.pickup_date.strftime('%d %b %Y') if obj.pickup_date else "Not Available",
+            "stakeholder": obj.stakeholders if obj.stakeholders else "Not Available",
+            "service": obj.haulage_reference if obj.haulage_reference else "Not Available",
+            "cost_per_customer": obj.customer_reference if obj.customer_reference else "Not Available"
         }
 
     def get_tracking(self, obj):
-        """Modify tracking info to include total container weight"""
+        """Modify tracking info to include total container weight, origin, and destination."""
         tracking_data = TrackingSerializer(obj.tracking).data if obj.tracking else {}
 
         # Calculate total container weight
@@ -355,7 +355,26 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
                 total_weight += container.weight_per_container * container.number_of_containers
 
         # Append total weight to tracking info
-        tracking_data["Total Container Weight"] = total_weight
+        tracking_data["total_container_weight"] = total_weight
+
+        # Add origin details
+        port = obj.lane.from_port if obj.lane else None
+        shipping_route = obj.shipping_route if obj.shipping_route else None
+        tracking_data["origin"] = {
+            "port_name": port.port_name if port else None,
+            "pincode": getattr(port, "pincode", None) if port else None,
+            "departure_time": shipping_route.departure_time.strftime("%d-%b-%Y %H:%M:%S")
+            if shipping_route and shipping_route.departure_time else None
+        }
+
+        # Add destination details
+        port = obj.lane.to_port if obj.lane else None
+        tracking_data["destination"] = {
+            "port_name": port.port_name if port else None,
+            "pincode": getattr(port, "pincode", None) if port else None,
+            "arrival_time": shipping_route.arrival_time.strftime("%d-%b-%Y %H:%M:%S")
+            if shipping_route and shipping_route.arrival_time else None
+        }
 
         return tracking_data
 
