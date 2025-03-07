@@ -285,7 +285,6 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
     booking_info = serializers.SerializerMethodField()
     additional_info = serializers.SerializerMethodField()
     documents = serializers.SerializerMethodField()  # Fetch multiple related documents
-    tracking_scans = TrackingScansSerializer()
 
     class Meta:
         model = Booking
