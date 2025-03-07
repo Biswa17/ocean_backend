@@ -244,13 +244,13 @@ class PortValidationSerializer(serializers.Serializer):
     from_port_id = serializers.IntegerField()
     from_port_inland_transport = serializers.CharField()
     to_port_id = serializers.IntegerField()
-    tp_port_inland_transport = serializers.CharField()
+    to_port_inland_transport = serializers.CharField()
 
     def validate(self, data):
         from_port_id = data.get("from_port_id")
         to_port_id = data.get("to_port_id")
         from_port_inland_transport = data.get("from_port_inland_transport")
-        tp_port_inland_transport = data.get("tp_port_inland_transport")
+        to_port_inland_transport = data.get("to_port_inland_transport")
 
         # Check if from_port_id and to_port_id are provided and valid
         if not from_port_id:
@@ -272,8 +272,8 @@ class PortValidationSerializer(serializers.Serializer):
         # Check that inland transport details are provided
         if not from_port_inland_transport:
             raise serializers.ValidationError("from_port_inland_transport is required.")
-        if not tp_port_inland_transport:
-            raise serializers.ValidationError("tp_port_inland_transport is required.")
+        if not to_port_inland_transport:
+            raise serializers.ValidationError("to_port_inland_transport is required.")
 
         return data
     
@@ -285,6 +285,7 @@ class BookingTrackingDetailsSerializer(serializers.ModelSerializer):
     booking_info = serializers.SerializerMethodField()
     additional_info = serializers.SerializerMethodField()
     documents = serializers.SerializerMethodField()  # Fetch multiple related documents
+    tracking_scans = TrackingScansSerializer()
 
     class Meta:
         model = Booking
